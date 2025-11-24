@@ -2,14 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-// using Microsoft.AspNetCore.Authorization; // Sẽ cần khi bạn làm Login
 
 namespace Assignment_ASP.NET.Controllers
 {
-     [Authorize(Roles = "Admin")] // <-- BẮT BUỘC SAU KHI LÀM LOGIN
-    // Chỉ Admin mới được quản lý Vai trò
+    [Authorize(Roles = "Admin")]
     public class RolesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,14 +17,15 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Roles
-        // Hiển thị danh sách tất cả vai trò
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Roles.ToListAsync());
+            var roles = await _context.Roles
+                .Include(r => r.Users)
+                .ToListAsync();
+            return View(roles);
         }
 
         // GET: /Roles/Details/5
-        // Hiển thị chi tiết (dù chỉ có 1 trường tên)
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -36,6 +34,7 @@ namespace Assignment_ASP.NET.Controllers
             }
 
             var role = await _context.Roles
+                .Include(r => r.Users)
                 .FirstOrDefaultAsync(m => m.RoleID == id);
 
             if (role == null)
@@ -47,7 +46,6 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Roles/Create
-        // Hiển thị form tạo mới
         public IActionResult Create()
         {
             return View();
@@ -60,7 +58,6 @@ namespace Assignment_ASP.NET.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Kiểm tra xem RoleName đã tồn tại chưa
                 var existingRole = await _context.Roles
                                          .FirstOrDefaultAsync(r => r.RoleName == role.RoleName);
                 if (existingRole != null)
@@ -77,7 +74,6 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Roles/Edit/5
-        // Hiển thị form chỉnh sửa
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -105,7 +101,6 @@ namespace Assignment_ASP.NET.Controllers
 
             if (ModelState.IsValid)
             {
-                // Kiểm tra xem tên mới có trùng với tên khác không
                 var existingRole = await _context.Roles
                                          .FirstOrDefaultAsync(r => r.RoleName == role.RoleName && r.RoleID != role.RoleID);
                 if (existingRole != null)
@@ -136,7 +131,6 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Roles/Delete/5
-        // Hiển thị trang xác nhận xóa
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -145,6 +139,7 @@ namespace Assignment_ASP.NET.Controllers
             }
 
             var role = await _context.Roles
+                .Include(r => r.Users)
                 .FirstOrDefaultAsync(m => m.RoleID == id);
 
             if (role == null)
@@ -163,15 +158,12 @@ namespace Assignment_ASP.NET.Controllers
             var role = await _context.Roles.FindAsync(id);
             if (role != null)
             {
-                // LƯU Ý: Cần kiểm tra xem có User nào đang dùng Role này không
-                // trước khi xóa để tránh lỗi Foreign Key
                 var userWithThisRole = await _context.Users.AnyAsync(u => u.RoleID == id);
 
                 if (userWithThisRole)
                 {
-                    // Nếu có User đang dùng, báo lỗi, không cho xóa
                     ModelState.AddModelError(string.Empty, "Không thể xóa vai trò này vì đang có người dùng sử dụng.");
-                    return View("Delete", role); // Trả về view Delete với thông báo lỗi
+                    return View("Delete", role);
                 }
 
                 _context.Roles.Remove(role);

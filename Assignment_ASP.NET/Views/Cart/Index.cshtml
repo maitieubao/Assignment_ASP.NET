@@ -115,8 +115,22 @@
                     <div class="space-y-4 mb-6">
                         <div class="flex items-center justify-between text-gray-600">
                             <span>Tạm tính (@Model.Count sản phẩm)</span>
-                            <span class="font-semibold">@totalAmount.ToString("N0")₫</span>
+                            <span class="font-semibold">@ViewBag.TotalAmount.ToString("N0")₫</span>
                         </div>
+                        
+                        @if (ViewBag.AppliedCoupon != null)
+                        {
+                             <div class="flex items-center justify-between text-green-600">
+                                <span>Giảm giá (@ViewBag.AppliedCoupon.Code - @ViewBag.AppliedCoupon.DiscountPercentage%)</span>
+                                <span class="font-semibold">-@ViewBag.DiscountAmount.ToString("N0")₫</span>
+                            </div>
+                            <div class="text-right">
+                                <form asp-action="RemoveCoupon" method="post" class="inline">
+                                    <button type="submit" class="text-xs text-red-500 hover:text-red-700 underline">Gỡ bỏ</button>
+                                </form>
+                            </div>
+                        }
+
                         <div class="flex items-center justify-between text-gray-600">
                             <span>Phí vận chuyển</span>
                             <span class="font-semibold text-green-600">Miễn phí</span>
@@ -125,9 +139,25 @@
                             <div class="flex items-center justify-between">
                                 <span class="text-lg font-bold text-gray-800">Tổng cộng</span>
                                 <span class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    @totalAmount.ToString("N0")₫
+                                    @((ViewBag.FinalAmount ?? ViewBag.TotalAmount).ToString("N0"))₫
                                 </span>
                             </div>
+                        </div>
+                        
+                         <!-- Coupon Code -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <form asp-action="ApplyCoupon" method="post" class="flex space-x-2">
+                                <input type="text" name="couponCode" placeholder="Mã giảm giá" class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-sm" />
+                                <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900">Áp dụng</button>
+                            </form>
+                            @if (TempData["CouponMessage"] != null)
+                            {
+                                <p class="text-xs text-green-600 mt-2">@TempData["CouponMessage"]</p>
+                            }
+                            @if (TempData["CouponError"] != null)
+                            {
+                                <p class="text-xs text-red-600 mt-2">@TempData["CouponError"]</p>
+                            }
                         </div>
                     </div>
 

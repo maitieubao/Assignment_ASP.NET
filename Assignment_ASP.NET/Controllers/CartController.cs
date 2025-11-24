@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Assignment_ASP.NET.Data;
-using Assignment_ASP.NET.Helpers; // <-- Dùng helper chúng ta vừa tạo
+using Assignment_ASP.NET.Helpers;
 using Assignment_ASP.NET.Models;
-using Microsoft.AspNetCore.Authorization; // <-- Dùng model CartItem
-
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Assignment_ASP.NET.Controllers
 {
@@ -14,6 +14,7 @@ namespace Assignment_ASP.NET.Controllers
 
         // Khóa (key) để lưu giỏ hàng trong Session
         public const string CART_KEY = "MyCart";
+        public const string COUPON_KEY = "MyCoupon";
 
         public CartController(ApplicationDbContext context)
         {
@@ -42,11 +43,30 @@ namespace Assignment_ASP.NET.Controllers
         public IActionResult Index()
         {
             var cart = GetCartItems();
+            var coupon = HttpContext.Session.Get<Coupon>(COUPON_KEY);
 
-            // Tính tổng tiền
-            ViewBag.TotalAmount = cart.Sum(item => item.Total);
+            decimal totalAmount = cart.Sum(item => item.Total);
+            decimal discountAmount = 0;
 
-            return View(cart); // Trả về View với model là List<CartItem>
+            if (coupon != null)
+            {
+                if (coupon.ExpiryDate < DateTime.Now || !coupon.IsActive)
+                {
+                     HttpContext.Session.Remove(COUPON_KEY);
+                     coupon = null;
+                }
+                else
+                {
+                    discountAmount = totalAmount * coupon.DiscountPercentage / 100;
+                }
+            }
+
+            ViewBag.TotalAmount = totalAmount;
+            ViewBag.DiscountAmount = discountAmount;
+            ViewBag.FinalAmount = totalAmount - discountAmount;
+            ViewBag.AppliedCoupon = coupon;
+
+            return View(cart);
         }
 
         // POST: /Cart/Add
@@ -136,6 +156,43 @@ namespace Assignment_ASP.NET.Controllers
         public IActionResult Clear()
         {
             HttpContext.Session.Remove(CART_KEY); // Xóa key khỏi Session
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ApplyCoupon(string couponCode)
+        {
+            if (string.IsNullOrEmpty(couponCode))
+            {
+                TempData["CouponError"] = "Vui lòng nhập mã giảm giá.";
+                return RedirectToAction("Index");
+            }
+
+            var coupon = await _context.Coupons.FirstOrDefaultAsync(c => c.Code == couponCode && c.IsActive);
+
+            if (coupon == null)
+            {
+                TempData["CouponError"] = "Mã giảm giá không hợp lệ.";
+                return RedirectToAction("Index");
+            }
+
+            if (coupon.ExpiryDate < DateTime.Now)
+            {
+                TempData["CouponError"] = "Mã giảm giá đã hết hạn.";
+                return RedirectToAction("Index");
+            }
+
+            // Save coupon to session
+            HttpContext.Session.Set(COUPON_KEY, coupon);
+            TempData["CouponMessage"] = $"Áp dụng mã {coupon.Code} thành công! Giảm {coupon.DiscountPercentage}%";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public IActionResult RemoveCoupon()
+        {
+            HttpContext.Session.Remove(COUPON_KEY);
+            TempData["CouponMessage"] = "Đã gỡ bỏ mã giảm giá.";
             return RedirectToAction("Index");
         }
     }

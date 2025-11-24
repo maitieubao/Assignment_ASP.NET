@@ -42,5 +42,8 @@ namespace Assignment_ASP.NET.Models
 
         // Mối quan hệ: Một sản phẩm có trong nhiều chi tiết đơn hàng
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+
+        // Mối quan hệ: Một sản phẩm có nhiều đánh giá
+        public virtual ICollection<Review> Reviews { get; set; }
     }
 }

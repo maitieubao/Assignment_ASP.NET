@@ -19,7 +19,8 @@ namespace Assignment_ASP.NET.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
-
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<Coupon> Coupons { get; set; }
 
         // Cấu hình thêm bằng Fluent API và chèn dữ liệu mẫu (Seeding)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +43,10 @@ namespace Assignment_ASP.NET.Data
 
             modelBuilder.Entity<Category>()
                 .HasIndex(c => c.CategoryName)
+                .IsUnique();
+
+            modelBuilder.Entity<Coupon>()
+                .HasIndex(c => c.Code)
                 .IsUnique();
 
 
@@ -110,7 +115,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 14 Pro Max",
                     Description = "Hàng chính hãng VN/A",
                     Price = 27000000,
-                    ImageUrl = "/images/iphone_14_promax.png", // <-- Sửa
+                    ImageUrl = "/images/iphone_14_promax.png",
                     Color = "Deep Purple",
                     Size = "256GB",
                     StockQuantity = 50,
@@ -122,7 +127,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy S23 Ultra",
                     Description = "Camera 200MP",
                     Price = 25000000,
-                    ImageUrl = "/images/galaxy_s23_ultra.png", // <-- Sửa
+                    ImageUrl = "/images/galaxy_s23_ultra.png",
                     Color = "Green",
                     Size = "256GB",
                     StockQuantity = 40,
@@ -134,7 +139,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Oppo Find X5 Pro",
                     Description = "Chip MariSilicon",
                     Price = 18000000,
-                    ImageUrl = "/images/oppo_find_x5_pro.png", // <-- Sửa
+                    ImageUrl = "/images/oppo_find_x5_pro.png",
                     Color = "White",
                     Size = "128GB",
                     StockQuantity = 30,
@@ -146,7 +151,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Xiaomi 13",
                     Description = "Hợp tác Leica",
                     Price = 15000000,
-                    ImageUrl = "/images/xiaomi_13.png", // <-- Sửa
+                    ImageUrl = "/images/xiaomi_13.png",
                     Color = "Black",
                     Size = "128GB",
                     StockQuantity = 20,
@@ -158,7 +163,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 13",
                     Description = "Giá tốt",
                     Price = 17000000,
-                    ImageUrl = "/images/iphone_13.png", // <-- Sửa
+                    ImageUrl = "/images/iphone_13.png",
                     Color = "Blue",
                     Size = "128GB",
                     StockQuantity = 50,
@@ -170,7 +175,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy Z Fold 4",
                     Description = "Điện thoại gập",
                     Price = 30000000,
-                    ImageUrl = "/images/galaxy_zfold4.png", // <-- Sửa
+                    ImageUrl = "/images/galaxy_zfold4.png",
                     Color = "Beige",
                     Size = "256GB",
                     StockQuantity = 15,
@@ -182,7 +187,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Google Pixel 7 Pro",
                     Description = "Android thuần",
                     Price = 20000000,
-                    ImageUrl = "/images/pixel7_pro.png", // <-- Sửa
+                    ImageUrl = "/images/pixel7_pro.png",
                     Color = "Snow",
                     Size = "128GB",
                     StockQuantity = 10,
@@ -194,7 +199,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 14 Plus",
                     Description = "Pin trâu",
                     Price = 22000000,
-                    ImageUrl = "/images/iphone14_plus.png", // <-- Sửa
+                    ImageUrl = "/images/iphone14_plus.png",
                     Color = "Red",
                     Size = "128GB",
                     StockQuantity = 25,
@@ -208,7 +213,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "AirPods Pro 2",
                     Description = "Chống ồn chủ động",
                     Price = 5500000,
-                    ImageUrl = "/images/ipod2_pro.png", // <-- Sửa
+                    ImageUrl = "/images/ipod2_pro.png",
                     Color = "White",
                     Size = "N/A",
                     StockQuantity = 100,
@@ -220,7 +225,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Củ sạc Apple 20W",
                     Description = "Sạc nhanh",
                     Price = 500000,
-                    ImageUrl = "/images/apple_20w.png", // <-- Sửa
+                    ImageUrl = "/images/apple_20w.png",
                     Color = "White",
                     Size = "20W",
                     StockQuantity = 200,
@@ -232,7 +237,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy Buds 2",
                     Description = "Thiết kế nhỏ gọn",
                     Price = 2000000,
-                    ImageUrl = "/images/galaxy_buds2.png", // <-- Sửa
+                    ImageUrl = "/images/galaxy_buds2.png",
                     Color = "Black",
                     Size = "N/A",
                     StockQuantity = 80,
@@ -244,7 +249,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Ốp lưng iPhone 14 Silicon",
                     Description = "Chính hãng Apple",
                     Price = 1000000,
-                    ImageUrl = "/images/op_silicon_iphone14.png", // <-- Sửa
+                    ImageUrl = "/images/op_silicon_iphone14.png",
                     Color = "Blue",
                     Size = "14 Pro Max",
                     StockQuantity = 150,
@@ -256,7 +261,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Sạc dự phòng Anker 10000mAh",
                     Description = "Siêu nhỏ gọn",
                     Price = 800000,
-                    ImageUrl = "/images/anker_10000mah.png", // <-- Sửa
+                    ImageUrl = "/images/anker_10000mah.png",
                     Color = "Black",
                     Size = "10000mAh",
                     StockQuantity = 120,
@@ -268,7 +273,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Cáp USB-C to Lightning",
                     Description = "Dây dù",
                     Price = 300000,
-                    ImageUrl = "/images/c_to_lightning.png", // <-- Sửa
+                    ImageUrl = "/images/c_to_lightning.png",
                     Color = "White",
                     Size = "1m",
                     StockQuantity = 300,
@@ -280,12 +285,18 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Chuột Logitech MX Master 3S",
                     Description = "Chuột văn phòng",
                     Price = 2500000,
-                    ImageUrl = "/images/logitech_master3s.png", // <-- Sửa
+                    ImageUrl = "/images/logitech_master3s.png",
                     Color = "Graphite",
                     Size = "N/A",
                     StockQuantity = 50,
                     CategoryID = 2
                 }
+            );
+
+            // --- Seed Coupons ---
+            modelBuilder.Entity<Coupon>().HasData(
+                new Coupon { CouponID = 1, Code = "WELCOME", DiscountPercentage = 10, ExpiryDate = new DateTime(2025, 12, 31), IsActive = true },
+                new Coupon { CouponID = 2, Code = "SALE50", DiscountPercentage = 50, ExpiryDate = new DateTime(2025, 6, 30), IsActive = true }
             );
 
             #endregion

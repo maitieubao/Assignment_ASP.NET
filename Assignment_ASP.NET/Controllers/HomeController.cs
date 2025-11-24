@@ -67,6 +67,8 @@ namespace Assignment_ASP.NET.Controllers
 
             var product = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Reviews)
+                    .ThenInclude(r => r.User)
                 .FirstOrDefaultAsync(m => m.ProductID == id);
 
             if (product == null)
