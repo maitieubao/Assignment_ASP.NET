@@ -1,0 +1,160 @@
+﻿@model List<Assignment_ASP.NET.Models.CartItem>
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    decimal totalAmount = Model != null && Model.Any() ? Model.Sum(item => item.Total) : 0;
+}
+
+<div class="max-w-6xl mx-auto">
+    
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="bi bi-cart text-blue-600 mr-2"></i>
+            Giỏ hàng của bạn
+        </h1>
+        <p class="text-gray-600">Có <span class="font-bold text-blue-600">@(Model?.Count ?? 0)</span> sản phẩm trong giỏ hàng</p>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <!-- Empty Cart -->
+        <div class="bg-white rounded-3xl p-16 text-center shadow-sm">
+            <div class="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="bi bi-cart-x text-gray-400 text-6xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Giỏ hàng trống</h2>
+            <p class="text-gray-600 mb-8">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm!</p>
+            <a asp-controller="Home" asp-action="Index" 
+               class="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-2xl transition-all">
+                <i class="bi bi-shop mr-2"></i>
+                Tiếp tục mua sắm
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Cart Items -->
+            <div class="lg:col-span-2 space-y-4">
+                @foreach (var item in Model)
+                {
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center space-x-6">
+                            
+                            <!-- Product Image -->
+                            <div class="flex-shrink-0">
+                                <img src="@(item.ImageUrl ?? "/images/placeholder.jpg")" 
+                                     alt="@item.ProductName" 
+                                     class="w-24 h-24 object-cover rounded-xl"/>
+                            </div>
+
+                            <!-- Product Info -->
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-gray-800 text-lg mb-2">@item.ProductName</h3>
+                                <p class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    @item.Price.ToString("N0")₫
+                                </p>
+                            </div>
+
+                            <!-- Quantity Controls -->
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center space-x-3">
+                                    <form asp-action="Update" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@item.ProductID" />
+                                        <input type="hidden" name="quantity" value="@(item.Quantity - 1)" />
+                                        <button type="submit" 
+                                                class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                                                @(item.Quantity <= 1 ? "disabled" : "")>
+                                            <i class="bi bi-dash text-gray-700"></i>
+                                        </button>
+                                    </form>
+                                    
+                                    <span class="w-12 text-center font-bold text-gray-800">@item.Quantity</span>
+                                    
+                                    <form asp-action="Update" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@item.ProductID" />
+                                        <input type="hidden" name="quantity" value="@(item.Quantity + 1)" />
+                                        <button type="submit" 
+                                                class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors">
+                                            <i class="bi bi-plus text-gray-700"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2 text-center">
+                                    Tổng: <span class="font-bold text-gray-800">@item.Total.ToString("N0")₫</span>
+                                </p>
+                            </div>
+
+                            <!-- Remove Button -->
+                            <div class="flex-shrink-0">
+                                <form asp-action="Remove" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@item.ProductID" />
+                                    <button type="submit" 
+                                            class="w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg flex items-center justify-center transition-colors">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 sticky top-24">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">
+                        <i class="bi bi-receipt text-blue-600 mr-2"></i>
+                        Tổng đơn hàng
+                    </h2>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>Tạm tính (@Model.Count sản phẩm)</span>
+                            <span class="font-semibold">@totalAmount.ToString("N0")₫</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>Phí vận chuyển</span>
+                            <span class="font-semibold text-green-600">Miễn phí</span>
+                        </div>
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-bold text-gray-800">Tổng cộng</span>
+                                <span class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    @totalAmount.ToString("N0")₫
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-3">
+                        <a asp-controller="Checkout" asp-action="Index" 
+                           class="block w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-xl transition-all text-center">
+                            <i class="bi bi-credit-card mr-2"></i>
+                            Tiến hành thanh toán
+                        </a>
+                        <a asp-controller="Home" asp-action="Index" 
+                           class="block w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors text-center">
+                            <i class="bi bi-arrow-left mr-2"></i>
+                            Tiếp tục mua sắm
+                        </a>
+                        <form asp-action="Clear" method="post" class="w-full">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" 
+                                    onclick="return confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')"
+                                    class="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors">
+                                <i class="bi bi-trash mr-2"></i>
+                                Xóa toàn bộ giỏ hàng
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,103 @@
+﻿@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
+
+<div class="min-h-[70vh] flex items-center justify-center px-4">
+    <div class="max-w-2xl w-full">
+        
+        <!-- Success Animation -->
+        <div class="text-center mb-8">
+            <div class="relative inline-block">
+                <div class="w-32 h-32 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                    <i class="bi bi-check-lg text-white text-6xl"></i>
+                </div>
+            </div>
+
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Đặt hàng thành công!</h1>
+            <p class="text-lg text-gray-600 mb-2">
+                Cảm ơn bạn đã mua hàng tại Web Bán Hàng
+            </p>
+            <p class="text-gray-500">
+                Chúng tôi sẽ xử lý đơn hàng của bạn trong thời gian sớm nhất
+            </p>
+        </div>
+
+        <!-- Order Info Card -->
+        <div class="bg-white rounded-3xl shadow-xl p-8 mb-6 border border-gray-100">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div>
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i class="bi bi-receipt text-blue-600 text-2xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-1">Mã đơn hàng</p>
+                    <p class="font-bold text-gray-800">#@DateTime.Now.ToString("yyyyMMddHHmmss")</p>
+                </div>
+                <div>
+                    <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i class="bi bi-calendar text-purple-600 text-2xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-1">Ngày đặt</p>
+                    <p class="font-bold text-gray-800">@DateTime.Now.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div>
+                    <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <i class="bi bi-clock text-orange-600 text-2xl"></i>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-1">Dự kiến giao</p>
+                    <p class="font-bold text-gray-800">2-3 ngày</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                <i class="bi bi-info-circle text-blue-600 mr-2"></i>
+                Các bước tiếp theo
+            </h3>
+            <div class="space-y-3">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                    <p class="text-gray-700">Chúng tôi sẽ gửi email xác nhận đơn hàng cho bạn</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                    <p class="text-gray-700">Đơn hàng sẽ được chuẩn bị và đóng gói trong 24h</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-6 h-6 bg-pink-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                    <p class="text-gray-700">Shipper sẽ liên hệ và giao hàng trong 2-3 ngày</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a asp-controller="Home" asp-action="Index" 
+               class="block py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-xl transition-all text-center">
+                <i class="bi bi-shop mr-2"></i>
+                Tiếp tục mua sắm
+            </a>
+            <a href="#" 
+               class="block py-4 bg-white text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all text-center">
+                <i class="bi bi-receipt mr-2"></i>
+                Xem đơn hàng
+            </a>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="text-center mt-8 p-6 bg-gray-50 rounded-2xl">
+            <p class="text-gray-600 mb-3">Có thắc mắc về đơn hàng?</p>
+            <div class="flex items-center justify-center space-x-6">
+                <a href="tel:18006909" class="flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                    <i class="bi bi-telephone-fill mr-2"></i>
+                    1800 6909
+                </a>
+                <a href="mailto:support@webbanhang.vn" class="flex items-center text-purple-600 hover:text-purple-700 font-medium">
+                    <i class="bi bi-envelope-fill mr-2"></i>
+                    support@webbanhang.vn
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

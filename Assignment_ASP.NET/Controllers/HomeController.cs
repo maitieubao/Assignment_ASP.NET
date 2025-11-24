@@ -1,21 +1,80 @@
-using System.Diagnostics;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
-using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace Assignment_ASP.NET.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ApplicationDbContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        // GET: /Home/Index
+        // Đã cập nhật để nhận searchString và categoryId
+        public async Task<IActionResult> Index(string searchString, int? categoryId)
         {
-            return View();
+            // --- Logic cho Sidebar ---
+            // 1. Lấy tất cả danh mục để hiển thị trên sidebar
+            var allCategories = await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync();
+
+            // --- Logic lọc Sản phẩm ---
+            // 2. Bắt đầu câu query sản phẩm
+            var productsQuery = _context.Products
+                                        .Include(p => p.Category)
+                                        .AsQueryable();
+
+            // 3. Lọc theo từ khóa tìm kiếm (từ thanh search)
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                productsQuery = productsQuery.Where(p =>
+                    p.ProductName.Contains(searchString) ||
+                    p.Category.CategoryName.Contains(searchString)
+                );
+            }
+
+            // 4. Lọc theo danh mục (từ sidebar)
+            if (categoryId.HasValue)
+            {
+                productsQuery = productsQuery.Where(p => p.CategoryID == categoryId.Value);
+            }
+
+            // 5. Tạo ViewModel và gán dữ liệu vào
+            var viewModel = new HomeIndexViewModel
+            {
+                Products = await productsQuery.ToListAsync(),
+                Categories = allCategories,
+                CurrentCategoryId = categoryId,
+                CurrentSearchString = searchString
+            };
+
+            // 6. Trả ViewModel về View
+            return View(viewModel);
+        }
+
+        // GET: /Home/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(m => m.ProductID == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return View(product);
         }
 
         public IActionResult Privacy()

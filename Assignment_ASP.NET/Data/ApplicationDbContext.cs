@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Assignment_ASP.NET.Models; // <-- Đảm bảo bạn đã using namespace của Models
-using System.Security.Cryptography; // Dùng để tạo hash mẫu
+using Assignment_ASP.NET.Models;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Assignment_ASP.NET.Data
@@ -8,7 +8,7 @@ namespace Assignment_ASP.NET.Data
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) // <-- Bạn cần gọi base constructor
+            : base(options)
         {
         }
 
@@ -28,12 +28,10 @@ namespace Assignment_ASP.NET.Data
 
             // --- 1. CẤU HÌNH RÀNG BUỘC (CONSTRAINTS) ---
 
-            // Trong bảng Roles, RoleName là duy nhất
             modelBuilder.Entity<Role>()
                 .HasIndex(r => r.RoleName)
                 .IsUnique();
 
-            // Trong bảng Users, Username và Email là duy nhất
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Username)
                 .IsUnique();
@@ -42,7 +40,6 @@ namespace Assignment_ASP.NET.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // Trong bảng Categories, CategoryName là duy nhất
             modelBuilder.Entity<Category>()
                 .HasIndex(c => c.CategoryName)
                 .IsUnique();
@@ -51,19 +48,16 @@ namespace Assignment_ASP.NET.Data
             // --- 2. CHÈN DỮ LIỆU MẪU (SEED DATA) ---
             #region Seed Data
 
-            // --- Seed Roles (Đáp ứng 3 loại người dùng) ---
+            // --- Seed Roles ---
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleID = 1, RoleName = "Admin" },
                 new Role { RoleID = 2, RoleName = "Employee" },
                 new Role { RoleID = 3, RoleName = "Customer" }
             );
 
-            // --- Seed Users (Đáp ứng 3 người dùng) ---
-            // LƯU Ý: Mật khẩu "123456" đã được băm bằng SHA256.
-            // Bạn sẽ cần dùng logic băm SHA256 tương tự trong chức năng Đăng nhập.
+            // --- Seed Users ---
             var sha256 = SHA256.Create();
             var passwordHash = BitConverter.ToString(sha256.ComputeHash(Encoding.UTF8.GetBytes("123456"))).Replace("-", "").ToLower();
-            // Hash for "123456" = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
 
             modelBuilder.Entity<User>().HasData(
                 new User
@@ -75,7 +69,7 @@ namespace Assignment_ASP.NET.Data
                     Email = "admin@example.com",
                     Address = "123 Admin St, Da Nang",
                     Phone = "090111222",
-                    RoleID = 1 // Admin
+                    RoleID = 1
                 },
                 new User
                 {
@@ -86,7 +80,7 @@ namespace Assignment_ASP.NET.Data
                     Email = "employee@example.com",
                     Address = "456 Employee St, Da Nang",
                     Phone = "090333444",
-                    RoleID = 2 // Employee
+                    RoleID = 2
                 },
                 new User
                 {
@@ -97,17 +91,17 @@ namespace Assignment_ASP.NET.Data
                     Email = "customer@example.com",
                     Address = "789 Customer St, Da Nang",
                     Phone = "090555666",
-                    RoleID = 3 // Customer
+                    RoleID = 3
                 }
             );
 
-            // --- Seed Categories (Đáp ứng 2 danh mục) ---
+            // --- Seed Categories ---
             modelBuilder.Entity<Category>().HasData(
                 new Category { CategoryID = 1, CategoryName = "Điện thoại" },
                 new Category { CategoryID = 2, CategoryName = "Phụ kiện" }
             );
 
-            // --- Seed Products (Đáp ứng 15 sản phẩm) ---
+            // --- Seed Products (ĐÃ CẬP NHẬT ĐƯỜNG DẪN ẢNH) ---
             modelBuilder.Entity<Product>().HasData(
                 // 8 sản phẩm Điện thoại (CategoryID = 1)
                 new Product
@@ -116,7 +110,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 14 Pro Max",
                     Description = "Hàng chính hãng VN/A",
                     Price = 27000000,
-                    ImageUrl = "/images/iphone14.jpg",
+                    ImageUrl = "/images/iphone_14_promax.png", // <-- Sửa
                     Color = "Deep Purple",
                     Size = "256GB",
                     StockQuantity = 50,
@@ -128,7 +122,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy S23 Ultra",
                     Description = "Camera 200MP",
                     Price = 25000000,
-                    ImageUrl = "/images/s23ultra.jpg",
+                    ImageUrl = "/images/galaxy_s23_ultra.png", // <-- Sửa
                     Color = "Green",
                     Size = "256GB",
                     StockQuantity = 40,
@@ -140,7 +134,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Oppo Find X5 Pro",
                     Description = "Chip MariSilicon",
                     Price = 18000000,
-                    ImageUrl = "/images/oppo.jpg",
+                    ImageUrl = "/images/oppo_find_x5_pro.png", // <-- Sửa
                     Color = "White",
                     Size = "128GB",
                     StockQuantity = 30,
@@ -152,7 +146,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Xiaomi 13",
                     Description = "Hợp tác Leica",
                     Price = 15000000,
-                    ImageUrl = "/images/xiaomi13.jpg",
+                    ImageUrl = "/images/xiaomi_13.png", // <-- Sửa
                     Color = "Black",
                     Size = "128GB",
                     StockQuantity = 20,
@@ -164,7 +158,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 13",
                     Description = "Giá tốt",
                     Price = 17000000,
-                    ImageUrl = "/images/iphone13.jpg",
+                    ImageUrl = "/images/iphone_13.png", // <-- Sửa
                     Color = "Blue",
                     Size = "128GB",
                     StockQuantity = 50,
@@ -176,7 +170,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy Z Fold 4",
                     Description = "Điện thoại gập",
                     Price = 30000000,
-                    ImageUrl = "/images/zfold4.jpg",
+                    ImageUrl = "/images/galaxy_zfold4.png", // <-- Sửa
                     Color = "Beige",
                     Size = "256GB",
                     StockQuantity = 15,
@@ -188,7 +182,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Google Pixel 7 Pro",
                     Description = "Android thuần",
                     Price = 20000000,
-                    ImageUrl = "/images/pixel7.jpg",
+                    ImageUrl = "/images/pixel7_pro.png", // <-- Sửa
                     Color = "Snow",
                     Size = "128GB",
                     StockQuantity = 10,
@@ -200,7 +194,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "iPhone 14 Plus",
                     Description = "Pin trâu",
                     Price = 22000000,
-                    ImageUrl = "/images/iphone14plus.jpg",
+                    ImageUrl = "/images/iphone14_plus.png", // <-- Sửa
                     Color = "Red",
                     Size = "128GB",
                     StockQuantity = 25,
@@ -214,7 +208,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "AirPods Pro 2",
                     Description = "Chống ồn chủ động",
                     Price = 5500000,
-                    ImageUrl = "/images/airpods.jpg",
+                    ImageUrl = "/images/ipod2_pro.png", // <-- Sửa
                     Color = "White",
                     Size = "N/A",
                     StockQuantity = 100,
@@ -226,7 +220,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Củ sạc Apple 20W",
                     Description = "Sạc nhanh",
                     Price = 500000,
-                    ImageUrl = "/images/sac20w.jpg",
+                    ImageUrl = "/images/apple_20w.png", // <-- Sửa
                     Color = "White",
                     Size = "20W",
                     StockQuantity = 200,
@@ -238,7 +232,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Samsung Galaxy Buds 2",
                     Description = "Thiết kế nhỏ gọn",
                     Price = 2000000,
-                    ImageUrl = "/images/buds2.jpg",
+                    ImageUrl = "/images/galaxy_buds2.png", // <-- Sửa
                     Color = "Black",
                     Size = "N/A",
                     StockQuantity = 80,
@@ -250,7 +244,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Ốp lưng iPhone 14 Silicon",
                     Description = "Chính hãng Apple",
                     Price = 1000000,
-                    ImageUrl = "/images/oplung.jpg",
+                    ImageUrl = "/images/op_silicon_iphone14.png", // <-- Sửa
                     Color = "Blue",
                     Size = "14 Pro Max",
                     StockQuantity = 150,
@@ -262,7 +256,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Sạc dự phòng Anker 10000mAh",
                     Description = "Siêu nhỏ gọn",
                     Price = 800000,
-                    ImageUrl = "/images/anker.jpg",
+                    ImageUrl = "/images/anker_10000mah.png", // <-- Sửa
                     Color = "Black",
                     Size = "10000mAh",
                     StockQuantity = 120,
@@ -274,7 +268,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Cáp USB-C to Lightning",
                     Description = "Dây dù",
                     Price = 300000,
-                    ImageUrl = "/images/cap.jpg",
+                    ImageUrl = "/images/c_to_lightning.png", // <-- Sửa
                     Color = "White",
                     Size = "1m",
                     StockQuantity = 300,
@@ -286,7 +280,7 @@ namespace Assignment_ASP.NET.Data
                     ProductName = "Chuột Logitech MX Master 3S",
                     Description = "Chuột văn phòng",
                     Price = 2500000,
-                    ImageUrl = "/images/logitech.jpg",
+                    ImageUrl = "/images/logitech_master3s.png", // <-- Sửa
                     Color = "Graphite",
                     Size = "N/A",
                     StockQuantity = 50,

@@ -1,0 +1,98 @@
+﻿@model IEnumerable<Assignment_ASP.NET.Models.Role>
+@{
+    ViewData["Title"] = "Quản lý vai trò";
+}
+
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">
+            <i class="bi bi-shield-lock text-indigo-600 mr-2"></i>
+            Quản lý vai trò
+        </h1>
+        <p class="text-slate-600 mt-1 text-sm">Quản lý các vai trò trong hệ thống</p>
+    </div>
+    <a asp-action="Create" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm">
+        <i class="bi bi-plus-circle mr-2"></i>
+        Thêm vai trò
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-2xl p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-600 mb-1">Tổng vai trò</p>
+                <p class="text-3xl font-bold text-indigo-600">@Model.Count()</p>
+            </div>
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <i class="bi bi-shield-lock text-indigo-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl p-6 border border-slate-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs text-slate-600 mb-1">Tổng người dùng</p>
+                <p class="text-3xl font-bold text-slate-900">@Model.Sum(r => r.Users.Count)</p>
+            </div>
+            <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                <i class="bi bi-people text-slate-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="p-6 border-b border-slate-200">
+        <h2 class="text-lg font-bold text-slate-900 text-sm">Danh sách vai trò</h2>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">ID</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">Tên vai trò</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">Số người dùng</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @foreach (var role in Model)
+                {
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="font-bold text-indigo-600">#@role.RoleID</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-900">@role.RoleName</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold">
+                                @role.Users.Count người dùng
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-end space-x-2">
+                                <a asp-action="Details" asp-route-id="@role.RoleID" 
+                                   class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm" title="Chi tiết">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@role.RoleID" 
+                                   class="p-2 text-green-600 hover:bg-green-50 rounded-lg text-sm" title="Sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@role.RoleID" 
+                                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg text-sm" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

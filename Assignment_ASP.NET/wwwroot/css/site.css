@@ -1,31 +1,104 @@
+﻿/* File CSS này đã được dọn dẹp và sửa lỗi line-height
+   cho layout flexbox và header/footer mới của bạn.
+*/
+
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+/* ================================================= */
+/* == CSS MỚI CHO GIAO DIỆN HEADER/FOOTER == */
+/* ================================================= */
+
+/* Xóa margin/border mặc định của Bootstrap khỏi header */
+header .navbar {
+    border: none !important;
+    margin-bottom: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
+/* Tầng 1: Thanh màu xanh đậm trên cùng */
+#header-top {
+    background-color: #0f3057;
+    color: #fff;
+    padding: 5px 0;
+    font-size: 0.85rem;
+}
+
+    #header-top .nav-link {
+        color: #fff;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+        #header-top .nav-link:hover {
+            color: #f0f0f0;
+        }
+
+/* Tầng 2: Thanh Logo + Tìm kiếm */
+#header-middle {
+    padding: 10px 0;
+    box-shadow: 0 3px 5px 0 rgba(0,0,0,.1);
+    position: relative;
+    z-index: 10;
+}
+
+/* Tầng 3: Thanh Menu chính */
+#main-menu-bar {
+    background-color: #fff !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    padding: 0;
+}
+
+    #main-menu-bar .navbar-nav .nav-link {
+        color: #333;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        padding: 15px 10px;
+    }
+
+        #main-menu-bar .navbar-nav .nav-link:hover,
+        #main-menu-bar .navbar-nav .nav-link.active {
+            color: #007bff;
+        }
+
+/* Sửa màu Footer */
+.footer-dark {
+    background-color: #0f3057;
+    color: #fff;
+    /* === SỬA LỖI ĐÈ CHỮ === */
+    /* Ghi đè CSS cũ của project đang gây lỗi */
+    line-height: 1.5; /* Đặt lại line-height về giá trị bình thường (1.5 lần cỡ chữ) */
+    position: static !important; /* Đảm bảo nó không bị 'absolute' */
+    height: auto !important; /* Đảm bảo chiều cao tự động */
+    white-space: normal !important; /* Cho phép chữ xuống dòng bình thường */
+}
+
+/* Ghi đè lên class .footer mặc định (nếu nó vẫn còn) */
+/* Đây là nguyên nhân chính gây lỗi */
+.footer {
+    position: static !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+    white-space: normal !important;
+    bottom: auto !important;
+    width: auto !important;
+}
+
+/* Xóa luôn margin-bottom của body (nếu có) */
 body {
-  margin-bottom: 60px;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    margin-bottom: 0 !important;
 }
