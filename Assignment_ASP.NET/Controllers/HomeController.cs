@@ -16,20 +16,14 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Home/Index
-        // Đã cập nhật để nhận searchString và categoryId
         public async Task<IActionResult> Index(string searchString, int? categoryId)
         {
-            // --- Logic cho Sidebar ---
-            // 1. Lấy tất cả danh mục để hiển thị trên sidebar
             var allCategories = await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync();
 
-            // --- Logic lọc Sản phẩm ---
-            // 2. Bắt đầu câu query sản phẩm
             var productsQuery = _context.Products
                                         .Include(p => p.Category)
                                         .AsQueryable();
 
-            // 3. Lọc theo từ khóa tìm kiếm (từ thanh search)
             if (!String.IsNullOrEmpty(searchString))
             {
                 productsQuery = productsQuery.Where(p =>
@@ -38,13 +32,11 @@ namespace Assignment_ASP.NET.Controllers
                 );
             }
 
-            // 4. Lọc theo danh mục (từ sidebar)
             if (categoryId.HasValue)
             {
                 productsQuery = productsQuery.Where(p => p.CategoryID == categoryId.Value);
             }
 
-            // 5. Tạo ViewModel và gán dữ liệu vào
             var viewModel = new HomeIndexViewModel
             {
                 Products = await productsQuery.ToListAsync(),
@@ -53,7 +45,6 @@ namespace Assignment_ASP.NET.Controllers
                 CurrentSearchString = searchString
             };
 
-            // 6. Trả ViewModel về View
             return View(viewModel);
         }
 
@@ -77,6 +68,17 @@ namespace Assignment_ASP.NET.Controllers
             }
 
             return View(product);
+        }
+
+        // GET: /Home/Promotions
+        public async Task<IActionResult> Promotions()
+        {
+            var activeCoupons = await _context.Coupons
+                .Where(c => c.IsActive && c.ExpiryDate >= DateTime.Now)
+                .OrderByDescending(c => c.DiscountPercentage)
+                .ToListAsync();
+
+            return View(activeCoupons);
         }
 
         public IActionResult Privacy()
