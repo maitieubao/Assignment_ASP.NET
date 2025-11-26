@@ -3,18 +3,17 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
-using Microsoft.AspNetCore.Hosting; // Cần cho IWebHostEnvironment
+using Microsoft.AspNetCore.Hosting;
 using System.IO;
-using Microsoft.AspNetCore.Authorization; // Cần cho Path, FileStream
+using Microsoft.AspNetCore.Authorization;
 
 namespace Assignment_ASP.NET.Controllers
 {
-     [Authorize(Roles = "Admin,Employee")] // <-- BẠN NÊN THÊM NÀY SAU KHI LÀM XONG LOGIN
-    // Chỉ Admin hoặc Employee mới được quản lý Sản phẩm
+    [Authorize(Roles = "Admin,Employee")]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _webHostEnvironment; // Dùng để xử lý upload file
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public ProductsController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
@@ -22,12 +21,46 @@ namespace Assignment_ASP.NET.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: /Products
-        // Hiển thị danh sách sản phẩm
-        public async Task<IActionResult> Index()
+        // GET: /Products - With search, filter, and pagination
+        public async Task<IActionResult> Index(string searchString, int? categoryId, int? page)
         {
-            // Luôn dùng Include() để tải dữ liệu liên quan (Category)
-            var products = await _context.Products.Include(p => p.Category).ToListAsync();
+            const int pageSize = 10;
+            int pageNumber = page ?? 1;
+
+            var productsQuery = _context.Products.Include(p => p.Category).AsQueryable();
+
+            // Search by name or description
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                productsQuery = productsQuery.Where(p => 
+                    p.ProductName.Contains(searchString) || 
+                    p.Description.Contains(searchString));
+            }
+
+            // Filter by category
+            if (categoryId.HasValue)
+            {
+                productsQuery = productsQuery.Where(p => p.CategoryID == categoryId.Value);
+            }
+
+            // Calculate pagination
+            int totalItems = await productsQuery.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // Get paginated results
+            var products = await productsQuery
+                .OrderBy(p => p.ProductName)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Pass data to view
+            ViewBag.CurrentSearch = searchString;
+            ViewBag.CurrentCategory = categoryId;
+            ViewBag.CurrentPage = pageNumber;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.Categories = await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync();
+
             return View(products);
         }
 
@@ -40,7 +73,7 @@ namespace Assignment_ASP.NET.Controllers
             }
 
             var product = await _context.Products
-                .Include(p => p.Category) // Lấy thông tin Category
+                .Include(p => p.Category)
                 .FirstOrDefaultAsync(m => m.ProductID == id);
 
             if (product == null)
@@ -52,10 +85,8 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Products/Create
-        // Hiển thị form tạo mới
         public IActionResult Create()
         {
-            // Lấy danh sách Categories để tạo dropdown
             PopulateCategoriesDropDownList();
             return View();
         }
@@ -65,23 +96,23 @@ namespace Assignment_ASP.NET.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             [Bind("ProductName,Description,Price,Color,Size,StockQuantity,CategoryID")] Product product,
-            IFormFile? imageFile) // Tham số để nhận file upload
+            IFormFile? imageFile)
         {
             if (ModelState.IsValid)
             {
-                // Xử lý Upload File
+                // Upload image if provided
                 if (imageFile != null)
                 {
                     string imageUrl = await UploadFile(imageFile);
-                    product.ImageUrl = imageUrl; // Gán đường dẫn file vào sản phẩm
+                    product.ImageUrl = imageUrl;
                 }
 
                 _context.Add(product);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Sản phẩm đã được tạo thành công!";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Nếu model state lỗi, load lại dropdown
             PopulateCategoriesDropDownList(product.CategoryID);
             return View(product);
         }
@@ -100,7 +131,6 @@ namespace Assignment_ASP.NET.Controllers
                 return NotFound();
             }
 
-            // Load dropdown và chọn sẵn category hiện tại
             PopulateCategoriesDropDownList(product.CategoryID);
             return View(product);
         }
@@ -110,7 +140,7 @@ namespace Assignment_ASP.NET.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id,
             [Bind("ProductID,ProductName,Description,Price,ImageUrl,Color,Size,StockQuantity,CategoryID")] Product product,
-            IFormFile? imageFile) // Tham số để nhận file upload mới (nếu có)
+            IFormFile? imageFile)
         {
             if (id != product.ProductID)
             {
@@ -121,22 +151,23 @@ namespace Assignment_ASP.NET.Controllers
             {
                 try
                 {
-                    // Xử lý Upload File MỚI (nếu có)
+                    // Handle new image upload
                     if (imageFile != null)
                     {
-                        // Xóa file ảnh CŨ (nếu có)
+                        // Delete old image
                         if (!string.IsNullOrEmpty(product.ImageUrl))
                         {
                             DeleteFile(product.ImageUrl);
                         }
 
-                        // Upload file MỚI
+                        // Upload new image
                         string newImageUrl = await UploadFile(imageFile);
-                        product.ImageUrl = newImageUrl; // Gán đường dẫn file mới
+                        product.ImageUrl = newImageUrl;
                     }
 
                     _context.Update(product);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Sản phẩm đã được cập nhật thành công!";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -152,7 +183,6 @@ namespace Assignment_ASP.NET.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Nếu model state lỗi, load lại dropdown
             PopulateCategoriesDropDownList(product.CategoryID);
             return View(product);
         }
@@ -185,7 +215,7 @@ namespace Assignment_ASP.NET.Controllers
             var product = await _context.Products.FindAsync(id);
             if (product != null)
             {
-                // Xóa file ảnh
+                // Delete image file
                 if (!string.IsNullOrEmpty(product.ImageUrl))
                 {
                     DeleteFile(product.ImageUrl);
@@ -193,14 +223,14 @@ namespace Assignment_ASP.NET.Controllers
 
                 _context.Products.Remove(product);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Sản phẩm đã được xóa thành công!";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // --- HÀM HỖ TRỢ (HELPER METHODS) ---
+        // --- HELPER METHODS ---
 
-        // Hàm hỗ trợ load danh sách Category cho Dropdown
         private void PopulateCategoriesDropDownList(object selectedCategory = null)
         {
             var categoriesQuery = from c in _context.Categories
@@ -212,41 +242,28 @@ namespace Assignment_ASP.NET.Controllers
                                                 selectedCategory);
         }
 
-        // Hàm hỗ trợ Upload file
         private async Task<string> UploadFile(IFormFile file)
         {
-            // 1. Tạo tên file unique
             string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
-
-            // 2. Lấy đường dẫn tới thư mục lưu file (ví dụ: wwwroot/images/products)
-            // BẠN CẦN TẠO THƯ MỤC NÀY BẰNG TAY TRONG PROJECT
             string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "products");
-
-            // 3. Tạo đường dẫn file đầy đủ
             string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            // 4. Đảm bảo thư mục tồn tại
             Directory.CreateDirectory(uploadsFolder);
 
-            // 5. Save file
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(fileStream);
             }
 
-            // 6. Trả về đường dẫn TƯƠNG ĐỐI để lưu vào DB
-            // (ví dụ: /images/products/ten_file.jpg)
-            return Path.Combine("/images", uniqueFileName);
+            return "/images/products/" + uniqueFileName;
         }
 
-        // Hàm hỗ trợ Xóa file
         private void DeleteFile(string imageUrl)
         {
             if (string.IsNullOrEmpty(imageUrl)) return;
 
-            // Lấy đường dẫn vật lý đầy đủ của file
-            // TrimStart('/') để Path.Combine hoạt động đúng
-            string filePath = Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('/'));
+            string fileName = Path.GetFileName(imageUrl);
+            string filePath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "products", fileName);
 
             if (System.IO.File.Exists(filePath))
             {
