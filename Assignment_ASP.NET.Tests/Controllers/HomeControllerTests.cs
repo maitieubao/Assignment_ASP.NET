@@ -50,13 +50,15 @@ namespace Assignment_ASP.NET.Tests.Controllers
         public async Task Index_ReturnsViewResult_WithAllProducts()
         {
             // Act
-            var result = await _controller.Index(null, null);
+            var result = await _controller.Index(null, null, null, null, null, 1);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             Assert.That(viewResult.Model, Is.InstanceOf<HomeIndexViewModel>());
             var model = viewResult.Model as HomeIndexViewModel;
+            Assert.That(model, Is.Not.Null);
             
             Assert.That(model.Products.Count(), Is.EqualTo(3));
             Assert.That(model.Categories.Count(), Is.EqualTo(2));
@@ -66,11 +68,14 @@ namespace Assignment_ASP.NET.Tests.Controllers
         public async Task Index_ReturnsFilteredProducts_BySearchString()
         {
             // Act
-            var result = await _controller.Index("iPhone", null);
+            var result = await _controller.Index("iPhone", null, null, null, null, 1);
 
             // Assert
+            // Assert
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             var model = viewResult.Model as HomeIndexViewModel;
+            Assert.That(model, Is.Not.Null);
 
             Assert.That(model.Products.Count(), Is.EqualTo(1));
             Assert.That(model.Products.First().ProductName, Is.EqualTo("iPhone 14"));
@@ -80,11 +85,14 @@ namespace Assignment_ASP.NET.Tests.Controllers
         public async Task Index_ReturnsFilteredProducts_ByCategoryId()
         {
             // Act
-            var result = await _controller.Index(null, 2);
+            var result = await _controller.Index(null, 2, null, null, null, 1);
 
             // Assert
+            // Assert
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             var model = viewResult.Model as HomeIndexViewModel;
+            Assert.That(model, Is.Not.Null);
 
             Assert.That(model.Products.Count(), Is.EqualTo(1));
             Assert.That(model.Products.First().ProductName, Is.EqualTo("MacBook Pro"));
@@ -99,8 +107,10 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             Assert.That(viewResult.Model, Is.InstanceOf<Product>());
             var model = viewResult.Model as Product;
+            Assert.That(model, Is.Not.Null);
 
             Assert.That(model.ProductID, Is.EqualTo(1));
         }

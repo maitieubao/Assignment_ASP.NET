@@ -12,6 +12,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+
 namespace Assignment_ASP.NET.Tests.Controllers
 {
     [TestFixture]
@@ -39,6 +41,7 @@ namespace Assignment_ASP.NET.Tests.Controllers
             _mockEnvironment.Setup(m => m.WebRootPath).Returns("wwwroot");
 
             _controller = new ProductsController(_context, _mockEnvironment.Object);
+            _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
         }
 
         [TearDown]
@@ -53,12 +56,14 @@ namespace Assignment_ASP.NET.Tests.Controllers
         public async Task Index_ReturnsViewResult_WithProducts()
         {
             // Act
-            var result = await _controller.Index();
+            var result = await _controller.Index(null, null, null);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             var model = viewResult.Model as List<Product>;
+            Assert.That(model, Is.Not.Null);
             Assert.That(model.Count, Is.EqualTo(1));
         }
 
@@ -71,7 +76,9 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
+            Assert.That(viewResult, Is.Not.Null);
             var model = viewResult.Model as Product;
+            Assert.That(model, Is.Not.Null);
             Assert.That(model.ProductID, Is.EqualTo(1));
         }
 
@@ -105,6 +112,7 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
+            Assert.That(redirectResult, Is.Not.Null);
             Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
             
             Assert.That(_context.Products.Count(), Is.EqualTo(2));
@@ -126,6 +134,7 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
+            Assert.That(redirectResult, Is.Not.Null);
             Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
 
             var updatedProduct = await _context.Products.FindAsync(product.ProductID);

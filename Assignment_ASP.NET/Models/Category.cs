@@ -12,9 +12,9 @@ namespace Assignment_ASP.NET.Models
 
         [Required]
         [StringLength(100)]
-        public string CategoryName { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
 
         // Mối quan hệ: Một danh mục có nhiều sản phẩm
-        public virtual ICollection<Product> Products { get; set; }
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

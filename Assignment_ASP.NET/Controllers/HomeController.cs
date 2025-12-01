@@ -16,14 +16,23 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         // GET: /Home/Index
-        public async Task<IActionResult> Index(string searchString, int? categoryId)
+        public async Task<IActionResult> Index(
+            string searchString, 
+            int? categoryId, 
+            string sortOrder,
+            decimal? minPrice,
+            decimal? maxPrice,
+            int page = 1)
         {
+            const int pageSize = 20;
+
             var allCategories = await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync();
 
             var productsQuery = _context.Products
                                         .Include(p => p.Category)
                                         .AsQueryable();
 
+            // Search filter
             if (!String.IsNullOrEmpty(searchString))
             {
                 productsQuery = productsQuery.Where(p =>
@@ -32,17 +41,59 @@ namespace Assignment_ASP.NET.Controllers
                 );
             }
 
+            // Category filter
             if (categoryId.HasValue)
             {
                 productsQuery = productsQuery.Where(p => p.CategoryID == categoryId.Value);
             }
 
+            // Price range filter
+            if (minPrice.HasValue)
+            {
+                productsQuery = productsQuery.Where(p => p.Price >= minPrice.Value);
+            }
+            if (maxPrice.HasValue)
+            {
+                productsQuery = productsQuery.Where(p => p.Price <= maxPrice.Value);
+            }
+
+            // Sorting
+            productsQuery = sortOrder switch
+            {
+                "price_asc" => productsQuery.OrderBy(p => p.Price),
+                "price_desc" => productsQuery.OrderByDescending(p => p.Price),
+                "name_asc" => productsQuery.OrderBy(p => p.ProductName),
+                "name_desc" => productsQuery.OrderByDescending(p => p.ProductName),
+                "newest" => productsQuery.OrderByDescending(p => p.ProductID),
+                _ => productsQuery.OrderBy(p => p.ProductName)
+            };
+
+            // Get total count before pagination
+            var totalItems = await productsQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // Ensure page is within valid range
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            // Apply pagination
+            var products = await productsQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
             var viewModel = new HomeIndexViewModel
             {
-                Products = await productsQuery.ToListAsync(),
+                Products = products,
                 Categories = allCategories,
                 CurrentCategoryId = categoryId,
-                CurrentSearchString = searchString
+                CurrentSearchString = searchString,
+                CurrentSortOrder = sortOrder,
+                MinPrice = minPrice,
+                MaxPrice = maxPrice,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
+                TotalItems = totalItems
             };
 
             return View(viewModel);

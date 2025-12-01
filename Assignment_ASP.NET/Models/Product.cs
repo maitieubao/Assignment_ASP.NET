@@ -33,6 +33,19 @@ namespace Assignment_ASP.NET.Models
         [Required]
         public int StockQuantity { get; set; }
 
+        // Thông tin chi tiết sản phẩm
+        [StringLength(200)]
+        public string? Manufacturer { get; set; } // Nơi sản xuất
+
+        [StringLength(100)]
+        public string? WarrantyPeriod { get; set; } // Thời gian bảo hành
+
+        [Column(TypeName = "ntext")]
+        public string? KeyFeatures { get; set; } // Công nghệ nổi bật (JSON hoặc text)
+
+        [Column(TypeName = "ntext")]
+        public string? Specifications { get; set; } // Thông số kỹ thuật (JSON hoặc text)
+
         // Khóa ngoại tới bảng Categories
         [ForeignKey("Category")]
         public int CategoryID { get; set; }
