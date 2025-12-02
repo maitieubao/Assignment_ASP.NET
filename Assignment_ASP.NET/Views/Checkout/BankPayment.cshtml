@@ -1,0 +1,218 @@
+@model Assignment_ASP.NET.Models.Order
+@{
+    ViewData["Title"] = "Thanh toán ngân hàng";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+            <i class="bi bi-bank text-3xl text-indigo-600"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-slate-900">Thanh toán ngân hàng</h1>
+        <p class="text-slate-600 mt-2">Vui lòng chọn ngân hàng để hoàn tất thanh toán</p>
+    </div>
+
+    <!-- Thông tin đơn hàng -->
+    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 p-6 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-slate-600">Mã đơn hàng</p>
+                <p class="text-xl font-bold text-slate-900">#@Model.OrderID.ToString("D6")</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-slate-600">Tổng thanh toán</p>
+                <p class="text-3xl font-bold text-indigo-600">@Model.TotalAmount.ToString("N0")₫</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách ngân hàng -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-8 mb-6">
+        <h2 class="font-bold text-slate-900 mb-6 flex items-center">
+            <i class="bi bi-credit-card-2-front text-indigo-600 mr-2"></i>
+            Chọn ngân hàng
+        </h2>
+
+        <form asp-action="ProcessBankPayment" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="orderId" value="@Model.OrderID" />
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <!-- Vietcombank -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="Vietcombank" class="bank-radio" required/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-green-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">Vietcombank</div>
+                                <div class="text-sm text-slate-600">Ngân hàng TMCP Ngoại thương Việt Nam</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- VietinBank -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="VietinBank" class="bank-radio"/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">VietinBank</div>
+                                <div class="text-sm text-slate-600">Ngân hàng TMCP Công Thương Việt Nam</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- BIDV -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="BIDV" class="bank-radio"/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-red-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">BIDV</div>
+                                <div class="text-sm text-slate-600">Ngân hàng TMCP Đầu tư và Phát triển VN</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Agribank -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="Agribank" class="bank-radio"/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-emerald-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">Agribank</div>
+                                <div class="text-sm text-slate-600">Ngân hàng Nông nghiệp và PTNT VN</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Techcombank -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="Techcombank" class="bank-radio"/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-purple-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">Techcombank</div>
+                                <div class="text-sm text-slate-600">Ngân hàng TMCP Kỹ thương Việt Nam</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- MB Bank -->
+                <label class="bank-option">
+                    <input type="radio" name="bankCode" value="MBBank" class="bank-radio"/>
+                    <div class="bank-card">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-4">
+                                <i class="bi bi-bank text-2xl text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900">MB Bank</div>
+                                <div class="text-sm text-slate-600">Ngân hàng TMCP Quân đội</div>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Lưu ý -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <i class="bi bi-info-circle text-blue-600 mr-3 mt-1"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-semibold mb-1">Lưu ý:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Đây là hệ thống thanh toán giả lập cho mục đích demo</li>
+                            <li>Không có giao dịch thực tế nào được thực hiện</li>
+                            <li>Đơn hàng sẽ được xác nhận ngay sau khi bạn nhấn "Thanh toán"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4">
+                <a asp-controller="Cart" asp-action="Index" 
+                   class="flex-1 py-4 px-6 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors text-center">
+                    <i class="bi bi-arrow-left mr-2"></i>
+                    Hủy
+                </a>
+                <button type="submit" 
+                        class="flex-1 py-4 px-6 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                    <i class="bi bi-check-circle mr-2"></i>
+                    Thanh toán
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Chi tiết đơn hàng -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-8">
+        <h3 class="font-bold text-slate-900 mb-4">Chi tiết đơn hàng</h3>
+        <div class="space-y-3">
+            @if (Model.OrderDetails != null)
+            {
+                @foreach (var item in Model.OrderDetails)
+                {
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div class="flex-1">
+                            <p class="font-medium text-slate-900">@item.Product.ProductName</p>
+                            <p class="text-sm text-slate-600">Số lượng: @item.Quantity</p>
+                        </div>
+                        <p class="font-semibold text-slate-900">@((item.Price * item.Quantity).ToString("N0"))₫</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .bank-option {
+        cursor: pointer;
+    }
+
+    .bank-radio {
+        display: none;
+    }
+
+    .bank-card {
+        padding: 1.25rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .bank-card:hover {
+        border-color: #6366f1;
+        background-color: #f0f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+
+    .bank-radio:checked + .bank-card {
+        border-color: #4f46e5;
+        background-color: #eef2ff;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+</style>

@@ -1,57 +1,47 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization; // Cần cho [Authorize]
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
-using Assignment_ASP.NET.Helpers; // Cần cho SessionExtensions
-using System.Security.Claims; // Cần để lấy UserID
+using Assignment_ASP.NET.Services;
+using Assignment_ASP.NET.Constants;
+using Assignment_ASP.NET.Extensions;
 
 namespace Assignment_ASP.NET.Controllers
 {
-    // BẮT BUỘC: Chỉ người đã đăng nhập mới được vào trang này
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = Roles.Customer)]
     public class CheckoutController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IOrderService _orderService;
+        private readonly ICartService _cartService;
+        private readonly IVnPayService _vnPayService;
 
-        public CheckoutController(ApplicationDbContext context)
+        public CheckoutController(
+            ApplicationDbContext context,
+            IOrderService orderService,
+            ICartService cartService,
+            IVnPayService vnPayService)
         {
             _context = context;
+            _orderService = orderService;
+            _cartService = cartService;
+            _vnPayService = vnPayService;
         }
 
-        // Lấy giỏ hàng từ Session
-        private List<CartItem> GetCartItems()
-        {
-            var cart = HttpContext.Session.Get<List<CartItem>>(CartController.CART_KEY);
-            return cart ?? new List<CartItem>();
-        }
-
-        // Lấy UserID của người đang đăng nhập
-        private int GetCurrentUserId()
-        {
-            // ClaimTypes.NameIdentifier là ID của User (đã được lưu khi Login)
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return userId;
-            }
-            throw new Exception("Không thể xác định người dùng.");
-        }
-
-        // GET: /Checkout/Index
-        // Hiển thị trang xác nhận thông tin
+        /// <summary>
+        /// GET: /Checkout/Index
+        /// Hiển thị trang checkout với thông tin đơn hàng
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var cart = GetCartItems();
+            var cart = _cartService.GetCartItems(HttpContext);
             if (cart.Count == 0)
             {
-                // Giỏ hàng trống, quay về trang giỏ hàng
                 return RedirectToAction("Index", "Cart");
             }
 
-            // Lấy thông tin người dùng hiện tại
-            var userId = GetCurrentUserId();
+            var userId = User.GetUserId();
             var user = await _context.Users.FindAsync(userId);
 
             if (user == null)
@@ -59,82 +49,200 @@ namespace Assignment_ASP.NET.Controllers
                 return NotFound("Không tìm thấy người dùng");
             }
 
-            // Gửi thông tin giỏ hàng và tổng tiền qua ViewBag
             ViewBag.CartItems = cart;
-            ViewBag.TotalAmount = cart.Sum(item => item.Total);
+            ViewBag.TotalAmount = _cartService.GetCartTotal(HttpContext);
 
-            // Gửi thông tin user (như địa chỉ) làm Model
             return View(user);
         }
 
-        // POST: /Checkout/PlaceOrder
-        // Xử lý đặt hàng (chuyển từ Session -> Database)
+        /// <summary>
+        /// POST: /Checkout/PlaceOrder
+        /// Xử lý đặt hàng
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PlaceOrder()
+        public async Task<IActionResult> PlaceOrder(string paymentMethod, string shippingAddress)
         {
-            var cart = GetCartItems();
-            var userId = GetCurrentUserId();
-
+            var cart = _cartService.GetCartItems(HttpContext);
             if (cart.Count == 0)
             {
-                // Lỗi: Giỏ hàng trống
                 return RedirectToAction("Index", "Cart");
             }
 
-            // Lấy thông tin người dùng (để lấy địa chỉ)
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
+            // Validate payment method
+            if (string.IsNullOrEmpty(paymentMethod) ||
+                (paymentMethod != PaymentMethod.COD && 
+                 paymentMethod != PaymentMethod.Bank &&
+                 paymentMethod != PaymentMethod.VnPay))
             {
-                return NotFound("Không tìm thấy người dùng");
+                TempData["Error"] = "Vui lòng chọn phương thức thanh toán";
+                return RedirectToAction("Index");
             }
 
-            // 1. TẠO ĐƠN HÀNG (ORDER)
-            var order = new Order
+            // Validate shipping address
+            if (string.IsNullOrEmpty(shippingAddress))
             {
-                UserID = userId,
-                OrderDate = DateTime.Now,
-                TotalAmount = cart.Sum(item => item.Total),
-                Status = "Pending", // Trạng thái ban đầu
-                ShippingAddress = user.Address // Lấy địa chỉ mặc định của user
-            };
+                var userId = User.GetUserId();
+                var user = await _context.Users.FindAsync(userId);
+                shippingAddress = user?.Address ?? "";
+            }
 
-            // 2. THÊM ORDER VÀO DATABASE (Lưu ý: Phải Save 1 lần để lấy OrderID)
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            // Lấy được OrderID tự tăng (sau khi đã Save)
-            int newOrderId = order.OrderID;
-
-            // 3. TẠO CHI TIẾT ĐƠN HÀNG (ORDER DETAILS)
-            foreach (var item in cart)
+            try
             {
-                var orderDetail = new OrderDetail
+                // Tạo đơn hàng thông qua OrderService
+                var order = await _orderService.CreateOrderAsync(
+                    User.GetUserId(),
+                    cart,
+                    shippingAddress,
+                    paymentMethod
+                );
+
+                // Xóa giỏ hàng
+                _cartService.ClearCart(HttpContext);
+
+                // Chuyển hướng dựa trên phương thức thanh toán
+                if (paymentMethod == PaymentMethod.VnPay)
                 {
-                    OrderID = newOrderId,
-                    ProductID = item.ProductID,
-                    Quantity = item.Quantity,
-                    Price = item.Price // Lưu lại giá tại thời điểm mua
-                };
-                _context.OrderDetails.Add(orderDetail);
+                    var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, order);
+                    return Redirect(paymentUrl);
+                }
+                else if (paymentMethod == PaymentMethod.Bank)
+                {
+                    return RedirectToAction("BankPayment", new { orderId = order.OrderID });
+                }
+                else
+                {
+                    return RedirectToAction("OrderConfirmation", new { orderId = order.OrderID });
+                }
             }
-
-            // 4. LƯU TẤT CẢ CHI TIẾT ĐƠN HÀNG VÀO DATABASE
-            await _context.SaveChangesAsync();
-
-            // 5. XÓA GIỎ HÀNG KHỎI SESSION
-            HttpContext.Session.Remove(CartController.CART_KEY);
-
-            // 6. CHUYỂN HƯỚNG TỚI TRANG CẢM ƠN
-            return RedirectToAction("OrderConfirmation");
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Đã xảy ra lỗi: {ex.Message}";
+                return RedirectToAction("Index");
+            }
         }
 
-        // GET: /Checkout/OrderConfirmation
-        // Trang cảm ơn sau khi đặt hàng
+        /// <summary>
+        /// GET: /Checkout/BankPayment
+        /// Hiển thị trang thanh toán ngân hàng
+        /// </summary>
         [HttpGet]
-        public IActionResult OrderConfirmation()
+        public async Task<IActionResult> BankPayment(int orderId)
         {
-            return View();
+            var order = await _orderService.GetOrderByIdAsync(orderId, includeDetails: true);
+
+            if (order == null)
+            {
+                return NotFound("Không tìm thấy đơn hàng");
+            }
+
+            // Kiểm tra quyền truy cập
+            if (order.UserID != User.GetUserId())
+            {
+                return Forbid();
+            }
+
+            return View(order);
+        }
+
+        /// <summary>
+        /// POST: /Checkout/ProcessBankPayment
+        /// Xử lý thanh toán ngân hàng (giả lập)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessBankPayment(int orderId, string bankCode)
+        {
+            var order = await _orderService.GetOrderByIdAsync(orderId);
+
+            if (order == null)
+            {
+                return NotFound("Không tìm thấy đơn hàng");
+            }
+
+            // Kiểm tra quyền truy cập
+            if (order.UserID != User.GetUserId())
+            {
+                return Forbid();
+            }
+
+            // Validate bank code
+            if (string.IsNullOrEmpty(bankCode) || !BankCodes.AllBanks.Contains(bankCode))
+            {
+                TempData["Error"] = "Vui lòng chọn ngân hàng";
+                return RedirectToAction("BankPayment", new { orderId });
+            }
+
+            // Cập nhật trạng thái thanh toán
+            await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
+
+            TempData["PaymentSuccess"] = $"Thanh toán qua {bankCode} thành công!";
+            return RedirectToAction("OrderConfirmation", new { orderId });
+        }
+
+        /// <summary>
+        /// GET: /Checkout/PaymentCallback
+        /// Xử lý callback từ VNPAY
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> PaymentCallback()
+        {
+            var response = _vnPayService.PaymentExecute(Request.Query);
+
+            // Parse orderId safely
+            if (!int.TryParse(response.OrderId, out int orderId))
+            {
+                 TempData["Error"] = "Lỗi xử lý đơn hàng từ VNPAY";
+                 return RedirectToAction("Index", "Home");
+            }
+
+            if (response.Success || response.VnPayResponseCode == "00")
+            {
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
+                TempData["PaymentSuccess"] = "Thanh toán VNPAY thành công!";
+                return RedirectToAction("OrderConfirmation", new { orderId });
+            }
+            else
+            {
+                // Thanh toán thất bại
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Failed);
+                TempData["Error"] = $"Lỗi thanh toán VNPAY: Mã lỗi {response.VnPayResponseCode}";
+                return RedirectToAction("OrderConfirmation", new { orderId });
+            }
+        }
+
+        /// <summary>
+        /// GET: /Checkout/OrderConfirmation
+        /// Hiển thị trang xác nhận đơn hàng
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> OrderConfirmation(int? orderId)
+        {
+            Order? order;
+
+            if (orderId == null)
+            {
+                // Lấy đơn hàng mới nhất của user
+                var orders = await _orderService.GetOrdersByUserIdAsync(User.GetUserId());
+                order = orders.FirstOrDefault();
+            }
+            else
+            {
+                order = await _orderService.GetOrderByIdAsync(orderId.Value, includeDetails: true);
+            }
+
+            if (order == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Kiểm tra quyền truy cập
+            if (order.UserID != User.GetUserId())
+            {
+                return Forbid();
+            }
+
+            return View(order);
         }
     }
 }

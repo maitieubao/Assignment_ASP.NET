@@ -1,59 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Assignment_ASP.NET.Data;
-using Assignment_ASP.NET.Helpers;
-using Assignment_ASP.NET.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Assignment_ASP.NET.Data;
+using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Services;
+using Assignment_ASP.NET.Constants;
+using Assignment_ASP.NET.Helpers;
 
 namespace Assignment_ASP.NET.Controllers
 {
-    [Authorize(Roles = "Customer")]
+    [Authorize(Roles = Roles.Customer)]
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICartService _cartService;
 
-        // Khóa (key) để lưu giỏ hàng trong Session
-        public const string CART_KEY = "MyCart";
-        public const string COUPON_KEY = "MyCoupon";
-
-        public CartController(ApplicationDbContext context)
+        public CartController(ApplicationDbContext context, ICartService cartService)
         {
             _context = context;
+            _cartService = cartService;
         }
 
-        // Lấy giỏ hàng từ Session
-        private List<CartItem> GetCartItems()
-        {
-            var cart = HttpContext.Session.Get<List<CartItem>>(CART_KEY);
-            if (cart == null)
-            {
-                cart = new List<CartItem>(); // Tạo mới nếu chưa có
-            }
-            return cart;
-        }
-
-        // Lưu giỏ hàng vào Session
-        private void SaveCartToSession(List<CartItem> cart)
-        {
-            HttpContext.Session.Set(CART_KEY, cart);
-        }
-
-        // GET: /Cart
-        // Hiển thị trang giỏ hàng
+        /// <summary>
+        /// GET: /Cart
+        /// Hiển thị trang giỏ hàng
+        /// </summary>
         public IActionResult Index()
         {
-            var cart = GetCartItems();
-            var coupon = HttpContext.Session.Get<Coupon>(COUPON_KEY);
+            var cart = _cartService.GetCartItems(HttpContext);
+            var coupon = HttpContext.Session.Get<Coupon>(SessionKeys.Coupon);
 
-            decimal totalAmount = cart.Sum(item => item.Total);
+            decimal totalAmount = _cartService.GetCartTotal(HttpContext);
             decimal discountAmount = 0;
 
             if (coupon != null)
             {
                 if (coupon.ExpiryDate < DateTime.Now || !coupon.IsActive)
                 {
-                     HttpContext.Session.Remove(COUPON_KEY);
-                     coupon = null;
+                    HttpContext.Session.Remove(SessionKeys.Coupon);
+                    coupon = null;
                 }
                 else
                 {
@@ -69,96 +54,60 @@ namespace Assignment_ASP.NET.Controllers
             return View(cart);
         }
 
-        // POST: /Cart/Add
-        // Thêm sản phẩm vào giỏ (được gọi từ trang Home/Details)
+        /// <summary>
+        /// POST: /Cart/Add
+        /// Thêm sản phẩm vào giỏ hàng
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Add(int productId, int quantity = 1)
         {
-            var cart = GetCartItems();
+            var success = await _cartService.AddToCartAsync(HttpContext, productId, quantity);
 
-            // 1. Kiểm tra xem sản phẩm đã có trong giỏ chưa
-            var existingItem = cart.FirstOrDefault(item => item.ProductID == productId);
-
-            if (existingItem != null)
+            if (!success)
             {
-                // 2a. Nếu đã có, chỉ tăng số lượng
-                existingItem.Quantity += quantity;
-            }
-            else
-            {
-                // 2b. Nếu chưa có, lấy sản phẩm từ DB
-                var product = await _context.Products.FindAsync(productId);
-                if (product == null)
-                {
-                    return NotFound("Sản phẩm không tồn tại");
-                }
-
-                // Tạo một CartItem mới
-                var newItem = new CartItem(product)
-                {
-                    Quantity = quantity
-                };
-                cart.Add(newItem); // Thêm vào giỏ
+                return NotFound("Sản phẩm không tồn tại");
             }
 
-            // 3. Lưu giỏ hàng trở lại Session
-            SaveCartToSession(cart);
-
-            // 4. Chuyển hướng đến trang Giỏ hàng
             return RedirectToAction("Index");
         }
 
-        // POST: /Cart/Remove
-        // Xóa một sản phẩm khỏi giỏ
+        /// <summary>
+        /// POST: /Cart/Remove
+        /// Xóa sản phẩm khỏi giỏ hàng
+        /// </summary>
         [HttpPost]
         public IActionResult Remove(int productId)
         {
-            var cart = GetCartItems();
-
-            var itemToRemove = cart.FirstOrDefault(item => item.ProductID == productId);
-
-            if (itemToRemove != null)
-            {
-                cart.Remove(itemToRemove);
-                SaveCartToSession(cart); // Lưu lại
-            }
-
+            _cartService.RemoveFromCart(HttpContext, productId);
             return RedirectToAction("Index");
         }
 
-        // POST: /Cart/Update
-        // Cập nhật số lượng
+        /// <summary>
+        /// POST: /Cart/Update
+        /// Cập nhật số lượng sản phẩm
+        /// </summary>
         [HttpPost]
         public IActionResult Update(int productId, int quantity)
         {
-            var cart = GetCartItems();
-            var itemToUpdate = cart.FirstOrDefault(item => item.ProductID == productId);
-
-            if (itemToUpdate != null)
-            {
-                if (quantity > 0)
-                {
-                    itemToUpdate.Quantity = quantity; // Cập nhật
-                }
-                else
-                {
-                    cart.Remove(itemToUpdate); // Xóa nếu số lượng = 0
-                }
-                SaveCartToSession(cart);
-            }
-
+            _cartService.UpdateQuantity(HttpContext, productId, quantity);
             return RedirectToAction("Index");
         }
 
-        // POST: /Cart/Clear
-        // Xóa toàn bộ giỏ hàng
+        /// <summary>
+        /// POST: /Cart/Clear
+        /// Xóa toàn bộ giỏ hàng
+        /// </summary>
         [HttpPost]
         public IActionResult Clear()
         {
-            HttpContext.Session.Remove(CART_KEY); // Xóa key khỏi Session
+            _cartService.ClearCart(HttpContext);
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// POST: /Cart/ApplyCoupon
+        /// Áp dụng mã giảm giá
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> ApplyCoupon(string couponCode)
         {
@@ -168,7 +117,8 @@ namespace Assignment_ASP.NET.Controllers
                 return RedirectToAction("Index");
             }
 
-            var coupon = await _context.Coupons.FirstOrDefaultAsync(c => c.Code == couponCode && c.IsActive);
+            var coupon = await _context.Coupons
+                .FirstOrDefaultAsync(c => c.Code == couponCode && c.IsActive);
 
             if (coupon == null)
             {
@@ -182,16 +132,19 @@ namespace Assignment_ASP.NET.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Save coupon to session
-            HttpContext.Session.Set(COUPON_KEY, coupon);
+            HttpContext.Session.Set(SessionKeys.Coupon, coupon);
             TempData["CouponMessage"] = $"Áp dụng mã {coupon.Code} thành công! Giảm {coupon.DiscountPercentage}%";
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// POST: /Cart/RemoveCoupon
+        /// Gỡ bỏ mã giảm giá
+        /// </summary>
         [HttpPost]
         public IActionResult RemoveCoupon()
         {
-            HttpContext.Session.Remove(COUPON_KEY);
+            HttpContext.Session.Remove(SessionKeys.Coupon);
             TempData["CouponMessage"] = "Đã gỡ bỏ mã giảm giá.";
             return RedirectToAction("Index");
         }

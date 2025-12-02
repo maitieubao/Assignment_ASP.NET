@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,45 +10,66 @@ using System.Threading.Tasks;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho OrdersController
+    /// </summary>
     [TestFixture]
-    public class OrdersControllerTests
+    public class OrdersControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private OrdersController _controller;
+        private OrdersController _controller = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Orders";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Orders_" + System.Guid.NewGuid())
-                .Options;
+            // Seed user
+            SeedDefaultUser();
 
-            _context = new ApplicationDbContext(options);
+            // Seed product
+            Context.Products.Add(TestDataBuilder.CreateProduct(
+                TestConstants.IPhone14ProductId,
+                TestConstants.IPhone14ProductName,
+                TestConstants.PhoneCategoryId,
+                TestConstants.IPhone14Price
+            ));
 
-            // Seed data
-            var user = new User { UserID = 1, Username = "testuser", PasswordHash = "hash", FullName = "Test User", Email = "test@test.com", Address = "Address", Phone = "123", RoleID = 1 };
-            _context.Users.Add(user);
+            // Seed order
+            var order = new Order 
+            { 
+                OrderID = 1, 
+                UserID = TestConstants.DefaultUserId, 
+                OrderDate = System.DateTime.Now, 
+                Status = "Pending", 
+                TotalAmount = TestConstants.IPhone14Price, 
+                ShippingAddress = TestConstants.DefaultAddress 
+            };
+            Context.Orders.Add(order);
 
-            var order = new Order { OrderID = 1, UserID = 1, OrderDate = System.DateTime.Now, Status = "Pending", TotalAmount = 100, ShippingAddress = "Address" };
-            _context.Orders.Add(order);
+            // Seed order detail
+            Context.OrderDetails.Add(new OrderDetail 
+            { 
+                OrderDetailID = 1, 
+                OrderID = 1, 
+                ProductID = TestConstants.IPhone14ProductId, 
+                Quantity = 1, 
+                Price = TestConstants.IPhone14Price 
+            });
 
-            var product = new Product { ProductID = 1, ProductName = "Product 1", Price = 100 };
-            _context.Products.Add(product);
+            Context.SaveChanges();
+        }
 
-            _context.OrderDetails.Add(new OrderDetail { OrderDetailID = 1, OrderID = 1, ProductID = 1, Quantity = 1, Price = 100 });
-
-            _context.SaveChanges();
-
-            _controller = new OrdersController(_context);
+        protected override void AdditionalSetup()
+        {
+            _controller = new OrdersController(Context);
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Index Tests
 
         [Test]
         public async Task Index_ReturnsViewResult_WithOrders()
@@ -59,9 +80,15 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
-            var model = viewResult.Model as List<Order>;
-            Assert.That(model.Count, Is.EqualTo(1));
+            Assert.That(viewResult, Is.Not.Null);
+            var model = viewResult!.Model as List<Order>;
+            Assert.That(model, Is.Not.Null);
+            Assert.That(model!.Count, Is.EqualTo(1), "Should return 1 order");
         }
+
+        #endregion
+
+        #region Details Tests
 
         [Test]
         public async Task Details_ReturnsViewResult_WithOrder()
@@ -72,16 +99,23 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
-            var model = viewResult.Model as Order;
-            Assert.That(model.OrderID, Is.EqualTo(1));
-            Assert.That(model.OrderDetails.Count, Is.EqualTo(1));
+            Assert.That(viewResult, Is.Not.Null);
+            var model = viewResult!.Model as Order;
+            Assert.That(model, Is.Not.Null);
+            Assert.That(model!.OrderID, Is.EqualTo(1));
+            Assert.That(model.OrderDetails.Count, Is.EqualTo(1), "Order should have 1 order detail");
         }
+
+        #endregion
+
+        #region Edit Tests
 
         [Test]
         public async Task Edit_Post_UpdatesStatus()
         {
             // Arrange
-            var order = await _context.Orders.FirstAsync();
+            var order = Context.Orders.First();
+            var originalStatus = order.Status;
             order.Status = "Shipped";
 
             // Act
@@ -89,20 +123,32 @@ namespace Assignment_ASP.NET.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            var updatedOrder = await _context.Orders.FindAsync(order.OrderID);
-            Assert.That(updatedOrder.Status, Is.EqualTo("Shipped"));
+            var updatedOrder = await Context.Orders.FindAsync(order.OrderID);
+            Assert.That(updatedOrder, Is.Not.Null);
+            Assert.That(updatedOrder!.Status, Is.EqualTo("Shipped"));
+            Assert.That(updatedOrder.Status, Is.Not.EqualTo(originalStatus), "Status should be updated");
         }
+
+        #endregion
+
+        #region Delete Tests
 
         [Test]
         public async Task DeleteConfirmed_RemovesOrderAndDetails()
         {
+            // Arrange
+            var initialOrderCount = Context.Orders.Count();
+            var initialDetailCount = Context.OrderDetails.Count();
+
             // Act
             var result = await _controller.DeleteConfirmed(1);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            Assert.That(_context.Orders.Count(), Is.EqualTo(0));
-            Assert.That(_context.OrderDetails.Count(), Is.EqualTo(0));
+            Assert.That(Context.Orders.Count(), Is.EqualTo(initialOrderCount - 1), "Should remove order");
+            Assert.That(Context.OrderDetails.Count(), Is.EqualTo(initialDetailCount - 1), "Should remove order details");
         }
+
+        #endregion
     }
 }

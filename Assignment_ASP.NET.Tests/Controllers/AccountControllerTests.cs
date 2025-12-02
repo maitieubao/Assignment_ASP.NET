@@ -1,49 +1,39 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using Moq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Security.Claims;
-using System;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho AccountController
+    /// </summary>
     [TestFixture]
-    public class AccountControllerTests
+    public class AccountControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private AccountController _controller;
-        private Mock<IAuthenticationService> _authServiceMock;
-        private Mock<IServiceProvider> _serviceProviderMock;
+        private AccountController _controller = null!;
+        private Mock<IAuthenticationService> _authServiceMock = null!;
+        private Mock<IServiceProvider> _serviceProviderMock = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Account";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Account_" + System.Guid.NewGuid())
-                .Options;
+            // Seed roles và admin user
+            SeedRoles();
+            SeedAdminUser();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed Roles
-            _context.Roles.Add(new Role { RoleID = 1, RoleName = "Admin" });
-            _context.Roles.Add(new Role { RoleID = 3, RoleName = "Customer" });
-            
-            // Seed User
-            var sha256 = SHA256.Create();
-            var passwordHash = BitConverter.ToString(sha256.ComputeHash(Encoding.UTF8.GetBytes("123456"))).Replace("-", "").ToLower();
-            _context.Users.Add(new User { UserID = 1, Username = "admin", PasswordHash = passwordHash, RoleID = 1, Email = "admin@test.com", FullName = "Admin", Address = "Addr", Phone = "123" });
-            
-            _context.SaveChanges();
-
+        protected override void AdditionalSetup()
+        {
             // Mock Authentication Service
             _authServiceMock = new Mock<IAuthenticationService>();
             _authServiceMock.Setup(x => x.SignInAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()))
@@ -59,7 +49,7 @@ namespace Assignment_ASP.NET.Tests.Controllers
             var httpContext = new DefaultHttpContext();
             httpContext.RequestServices = _serviceProviderMock.Object;
 
-            _controller = new AccountController(_context);
+            _controller = new AccountController(Context);
             _controller.ControllerContext = new ControllerContext()
             {
                 HttpContext = httpContext
@@ -67,25 +57,26 @@ namespace Assignment_ASP.NET.Tests.Controllers
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Login Tests
 
         [Test]
         public async Task Login_Post_ValidCredentials_RedirectsToHomeOrAdmin()
         {
             // Act
-            var result = await _controller.Login("admin", "123456");
+            var result = await _controller.Login(TestConstants.AdminUsername, TestConstants.DefaultPassword);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
+            Assert.That(redirectResult, Is.Not.Null);
             // Admin redirects to Products Index
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-            Assert.That(redirectResult.ControllerName, Is.EqualTo("Products"));
+            Assert.That(redirectResult!.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(redirectResult.ControllerName, Is.EqualTo(TestConstants.ProductsController));
 
             // Verify SignIn was called
             _authServiceMock.Verify(x => x.SignInAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()), Times.Once);
@@ -95,12 +86,16 @@ namespace Assignment_ASP.NET.Tests.Controllers
         public async Task Login_Post_InvalidCredentials_ReturnsView()
         {
             // Act
-            var result = await _controller.Login("admin", "wrongpassword");
+            var result = await _controller.Login(TestConstants.AdminUsername, "wrongpassword");
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
-            Assert.That(_controller.ModelState.IsValid, Is.False);
+            Assert.That(_controller.ModelState.IsValid, Is.False, "ModelState should be invalid for wrong password");
         }
+
+        #endregion
+
+        #region Logout Tests
 
         [Test]
         public async Task Logout_Post_RedirectsToHome()
@@ -111,46 +106,68 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-            Assert.That(redirectResult.ControllerName, Is.EqualTo("Home"));
+            Assert.That(redirectResult, Is.Not.Null);
+            Assert.That(redirectResult!.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(redirectResult.ControllerName, Is.EqualTo(TestConstants.HomeController));
 
             // Verify SignOut was called
             _authServiceMock.Verify(x => x.SignOutAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<AuthenticationProperties>()), Times.Once);
         }
 
+        #endregion
+
+        #region Register Tests
+
         [Test]
         public async Task Register_Post_ValidUser_RedirectsToHome()
         {
             // Arrange
-            var newUser = new User { Username = "newuser", FullName = "New User", Email = "new@test.com", Address = "Addr", Phone = "123" };
+            var newUser = new User 
+            { 
+                Username = "newuser", 
+                FullName = "New User", 
+                Email = "new@test.com", 
+                Address = TestConstants.DefaultAddress, 
+                Phone = TestConstants.DefaultPhone 
+            };
 
             // Act
-            var result = await _controller.Register(newUser, "123456", "123456");
+            var result = await _controller.Register(newUser, TestConstants.DefaultPassword, TestConstants.DefaultPassword);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-            Assert.That(redirectResult.ControllerName, Is.EqualTo("Home"));
+            Assert.That(redirectResult, Is.Not.Null);
+            Assert.That(redirectResult!.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(redirectResult.ControllerName, Is.EqualTo(TestConstants.HomeController));
 
             // Verify User was added
-            var addedUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "newuser");
-            Assert.That(addedUser, Is.Not.Null);
-            Assert.That(addedUser.RoleID, Is.EqualTo(3)); // Customer role
+            var addedUser = await Context.Users.FirstOrDefaultAsync(u => u.Username == "newuser");
+            Assert.That(addedUser, Is.Not.Null, "New user should be added to database");
+            Assert.That(addedUser!.RoleID, Is.EqualTo(TestConstants.CustomerRoleId), "New user should have Customer role");
         }
 
         [Test]
         public async Task Register_Post_DuplicateUsername_ReturnsView()
         {
             // Arrange
-            var newUser = new User { Username = "admin", FullName = "New User", Email = "new@test.com", Address = "Addr", Phone = "123" };
+            var newUser = new User 
+            { 
+                Username = TestConstants.AdminUsername, 
+                FullName = "New User", 
+                Email = "new@test.com", 
+                Address = TestConstants.DefaultAddress, 
+                Phone = TestConstants.DefaultPhone 
+            };
 
             // Act
-            var result = await _controller.Register(newUser, "123456", "123456");
+            var result = await _controller.Register(newUser, TestConstants.DefaultPassword, TestConstants.DefaultPassword);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
-            Assert.That(_controller.ModelState.IsValid, Is.False);
+            Assert.That(_controller.ModelState.IsValid, Is.False, "ModelState should be invalid for duplicate username");
         }
+
+        #endregion
     }
 }

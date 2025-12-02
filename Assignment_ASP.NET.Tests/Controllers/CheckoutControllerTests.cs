@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Moq;
@@ -10,44 +10,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
-using System.Text.Json;
-using System.Text;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho CheckoutController
+    /// </summary>
     [TestFixture]
-    public class CheckoutControllerTests
+    public class CheckoutControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private CheckoutController _controller;
-        private Mock<ISession> _mockSession;
+        private CheckoutController _controller = null!;
+        private Mock<ISession> _mockSession = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Checkout";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Checkout_" + System.Guid.NewGuid())
-                .Options;
+            // Seed user cho checkout tests
+            SeedDefaultUser();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed User
-            _context.Users.Add(new User { UserID = 1, Username = "testuser", Email = "test@test.com", Address = "Test Address", RoleID = 3, FullName = "Test User", PasswordHash = "hash" });
-            _context.SaveChanges();
-
+        protected override void AdditionalSetup()
+        {
             _mockSession = new Mock<ISession>();
 
+            // Setup authenticated user
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
             {
-                new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.NameIdentifier, TestConstants.DefaultUserId.ToString()),
+                new Claim(ClaimTypes.Name, TestConstants.DefaultUsername),
             }, "mock"));
 
             var httpContext = new DefaultHttpContext();
             httpContext.User = user;
             httpContext.Session = _mockSession.Object;
 
-            _controller = new CheckoutController(_context);
+            _controller = new CheckoutController(Context);
             _controller.ControllerContext = new ControllerContext()
             {
                 HttpContext = httpContext
@@ -55,21 +53,19 @@ namespace Assignment_ASP.NET.Tests.Controllers
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Index Tests
 
         [Test]
         public async Task Index_ReturnsViewResult_WithUser_WhenCartIsNotEmpty()
         {
             // Arrange
-            var cart = new List<CartItem> { new CartItem { ProductID = 1, Quantity = 1, Price = 100 } };
-            var serialized = JsonSerializer.Serialize(cart);
-            var bytes = Encoding.UTF8.GetBytes(serialized);
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out bytes)).Returns(true);
+            var cart = TestDataBuilder.CreateDefaultCartItems();
+            SessionHelper.SetupCartWithItems(_mockSession, cart);
 
             // Act
             var result = await _controller.Index();
@@ -79,15 +75,14 @@ namespace Assignment_ASP.NET.Tests.Controllers
             var viewResult = result as ViewResult;
             Assert.That(viewResult.Model, Is.InstanceOf<User>());
             var model = viewResult.Model as User;
-            Assert.That(model.UserID, Is.EqualTo(1));
+            Assert.That(model.UserID, Is.EqualTo(TestConstants.DefaultUserId));
         }
 
         [Test]
         public async Task Index_RedirectsToCart_WhenCartIsEmpty()
         {
             // Arrange
-            byte[] outBytes = null;
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out outBytes)).Returns(false);
+            SessionHelper.SetupEmptyCart(_mockSession);
 
             // Act
             var result = await _controller.Index();
@@ -95,50 +90,54 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-            Assert.That(redirectResult.ControllerName, Is.EqualTo("Cart"));
+            Assert.That(redirectResult.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(redirectResult.ControllerName, Is.EqualTo(TestConstants.CartController));
         }
+
+        #endregion
+
+        #region PlaceOrder Tests
 
         [Test]
         public async Task PlaceOrder_CreatesOrderAndDetails_AndClearsCart()
         {
             // Arrange
-            var cart = new List<CartItem> { new CartItem { ProductID = 1, Quantity = 2, Price = 100 } };
-            var serialized = JsonSerializer.Serialize(cart);
-            var bytes = Encoding.UTF8.GetBytes(serialized);
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out bytes)).Returns(true);
+            var cart = new List<CartItem>
+            {
+                TestDataBuilder.CreateCartItem(TestConstants.IPhone14ProductId, 2, TestConstants.IPhone14Price)
+            };
+            SessionHelper.SetupCartWithItems(_mockSession, cart);
 
             // Act
             var result = await _controller.PlaceOrder();
 
-            // Assert
+            // Assert - Verify redirect
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
             Assert.That(redirectResult.ActionName, Is.EqualTo("OrderConfirmation"));
 
             // Verify Order created
-            Assert.That(_context.Orders.Count(), Is.EqualTo(1));
-            var order = await _context.Orders.FirstAsync();
-            Assert.That(order.UserID, Is.EqualTo(1));
-            Assert.That(order.TotalAmount, Is.EqualTo(200));
+            Assert.That(Context.Orders.Count(), Is.EqualTo(1), "Should create one order");
+            var order = Context.Orders.First();
+            Assert.That(order.UserID, Is.EqualTo(TestConstants.DefaultUserId));
+            Assert.That(order.TotalAmount, Is.EqualTo(2 * TestConstants.IPhone14Price), "Total should be quantity * price");
 
             // Verify OrderDetails created
-            Assert.That(_context.OrderDetails.Count(), Is.EqualTo(1));
-            var detail = await _context.OrderDetails.FirstAsync();
+            Assert.That(Context.OrderDetails.Count(), Is.EqualTo(1), "Should create one order detail");
+            var detail = Context.OrderDetails.First();
             Assert.That(detail.OrderID, Is.EqualTo(order.OrderID));
-            Assert.That(detail.ProductID, Is.EqualTo(1));
+            Assert.That(detail.ProductID, Is.EqualTo(TestConstants.IPhone14ProductId));
             Assert.That(detail.Quantity, Is.EqualTo(2));
 
             // Verify Cart cleared
-            _mockSession.Verify(s => s.Remove(CartController.CART_KEY), Times.Once);
+            SessionHelper.VerifyCartRemoved(_mockSession, Times.Once());
         }
 
         [Test]
         public async Task PlaceOrder_RedirectsToCart_WhenCartIsEmpty()
         {
-             // Arrange
-            byte[] outBytes = null;
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out outBytes)).Returns(false);
+            // Arrange
+            SessionHelper.SetupEmptyCart(_mockSession);
 
             // Act
             var result = await _controller.PlaceOrder();
@@ -146,8 +145,13 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-            Assert.That(redirectResult.ControllerName, Is.EqualTo("Cart"));
+            Assert.That(redirectResult.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(redirectResult.ControllerName, Is.EqualTo(TestConstants.CartController));
+            
+            // Verify no order was created
+            Assert.That(Context.Orders.Count(), Is.EqualTo(0), "Should not create order when cart is empty");
         }
+
+        #endregion
     }
 }

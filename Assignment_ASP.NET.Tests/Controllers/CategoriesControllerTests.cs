@@ -1,8 +1,8 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,36 +10,35 @@ using System.Threading.Tasks;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho CategoriesController
+    /// </summary>
     [TestFixture]
-    public class CategoriesControllerTests
+    public class CategoriesControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private CategoriesController _controller;
+        private CategoriesController _controller = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Categories";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Categories_" + System.Guid.NewGuid())
-                .Options;
+            // Seed categories cho tất cả tests
+            SeedCategories();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed data
-            _context.Categories.Add(new Category { CategoryID = 1, CategoryName = "Phone" });
-            _context.Categories.Add(new Category { CategoryID = 2, CategoryName = "Laptop" });
-            _context.SaveChanges();
-
-            _controller = new CategoriesController(_context);
+        protected override void AdditionalSetup()
+        {
+            _controller = new CategoriesController(Context);
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+
+        #region Index Tests
 
         [Test]
         public async Task Index_ReturnsViewResult_WithCategories()
@@ -51,21 +50,30 @@ namespace Assignment_ASP.NET.Tests.Controllers
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             var model = viewResult.Model as List<Category>;
-            Assert.That(model.Count, Is.EqualTo(2));
+            Assert.That(model.Count, Is.EqualTo(2), "Should return 2 categories");
         }
+
+        #endregion
+
+        #region Details Tests
 
         [Test]
         public async Task Details_ReturnsViewResult_WithCategory()
         {
             // Act
-            var result = await _controller.Details(1);
+            var result = await _controller.Details(TestConstants.PhoneCategoryId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             var model = viewResult.Model as Category;
-            Assert.That(model.CategoryID, Is.EqualTo(1));
+            Assert.That(model.CategoryID, Is.EqualTo(TestConstants.PhoneCategoryId));
+            Assert.That(model.CategoryName, Is.EqualTo(TestConstants.PhoneCategoryName));
         }
+
+        #endregion
+
+        #region Create Tests
 
         [Test]
         public async Task Create_Post_ValidCategory_RedirectsToIndex()
@@ -78,14 +86,21 @@ namespace Assignment_ASP.NET.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            Assert.That(_context.Categories.Count(), Is.EqualTo(3));
+            var redirectResult = result as RedirectToActionResult;
+            Assert.That(redirectResult.ActionName, Is.EqualTo(TestConstants.IndexAction));
+            Assert.That(Context.Categories.Count(), Is.EqualTo(3), "Should have 3 categories after adding new one");
         }
+
+        #endregion
+
+        #region Edit Tests
 
         [Test]
         public async Task Edit_Post_ValidCategory_RedirectsToIndex()
         {
             // Arrange
-            var category = await _context.Categories.FirstAsync();
+            var category = Context.Categories.First();
+            var originalName = category.CategoryName;
             category.CategoryName = "Smart Phone";
 
             // Act
@@ -93,19 +108,32 @@ namespace Assignment_ASP.NET.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            var updatedCategory = await _context.Categories.FindAsync(category.CategoryID);
+            var updatedCategory = await Context.Categories.FindAsync(category.CategoryID);
             Assert.That(updatedCategory.CategoryName, Is.EqualTo("Smart Phone"));
+            Assert.That(updatedCategory.CategoryName, Is.Not.EqualTo(originalName), "Category name should be updated");
         }
+
+        #endregion
+
+        #region Delete Tests
 
         [Test]
         public async Task DeleteConfirmed_RemovesCategory()
         {
+            // Arrange
+            var initialCount = Context.Categories.Count();
+
             // Act
-            var result = await _controller.DeleteConfirmed(1);
+            var result = await _controller.DeleteConfirmed(TestConstants.PhoneCategoryId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            Assert.That(_context.Categories.Count(), Is.EqualTo(1));
+            Assert.That(Context.Categories.Count(), Is.EqualTo(initialCount - 1), "Should have one less category");
+            
+            var deletedCategory = await Context.Categories.FindAsync(TestConstants.PhoneCategoryId);
+            Assert.That(deletedCategory, Is.Null, "Deleted category should not exist");
         }
+
+        #endregion
     }
 }

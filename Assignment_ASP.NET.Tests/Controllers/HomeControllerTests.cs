@@ -1,50 +1,43 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho HomeController
+    /// </summary>
     [TestFixture]
-    public class HomeControllerTests
+    public class HomeControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private HomeController _controller;
+        private HomeController _controller = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Home";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid()) // Unique DB for each test
-                .Options;
+            // Seed categories và products cho home page tests
+            SeedCategories();
+            SeedProducts();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed data
-            _context.Categories.Add(new Category { CategoryID = 1, CategoryName = "Phone" });
-            _context.Categories.Add(new Category { CategoryID = 2, CategoryName = "Laptop" });
-
-            _context.Products.Add(new Product { ProductID = 1, ProductName = "iPhone 14", CategoryID = 1, Price = 1000 });
-            _context.Products.Add(new Product { ProductID = 2, ProductName = "Samsung S23", CategoryID = 1, Price = 900 });
-            _context.Products.Add(new Product { ProductID = 3, ProductName = "MacBook Pro", CategoryID = 2, Price = 2000 });
-
-            _context.SaveChanges();
-
-            _controller = new HomeController(_context);
+        protected override void AdditionalSetup()
+        {
+            _controller = new HomeController(Context);
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Index Tests
 
         [Test]
         public async Task Index_ReturnsViewResult_WithAllProducts()
@@ -56,63 +49,66 @@ namespace Assignment_ASP.NET.Tests.Controllers
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            Assert.That(viewResult.Model, Is.InstanceOf<HomeIndexViewModel>());
+            Assert.That(viewResult!.Model, Is.InstanceOf<HomeIndexViewModel>());
             var model = viewResult.Model as HomeIndexViewModel;
             Assert.That(model, Is.Not.Null);
             
-            Assert.That(model.Products.Count(), Is.EqualTo(3));
-            Assert.That(model.Categories.Count(), Is.EqualTo(2));
+            Assert.That(model!.Products.Count(), Is.EqualTo(3), "Should return all 3 products");
+            Assert.That(model.Categories.Count(), Is.EqualTo(2), "Should return all 2 categories");
         }
 
         [Test]
         public async Task Index_ReturnsFilteredProducts_BySearchString()
         {
             // Act
-            var result = await _controller.Index("iPhone", null, null, null, null, 1);
+            var result = await _controller.Index(TestConstants.IPhone14ProductName, null, null, null, null, 1);
 
-            // Assert
             // Assert
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            var model = viewResult.Model as HomeIndexViewModel;
+            var model = viewResult!.Model as HomeIndexViewModel;
             Assert.That(model, Is.Not.Null);
 
-            Assert.That(model.Products.Count(), Is.EqualTo(1));
-            Assert.That(model.Products.First().ProductName, Is.EqualTo("iPhone 14"));
+            Assert.That(model!.Products.Count(), Is.EqualTo(1), "Should return only iPhone 14");
+            Assert.That(model.Products.First().ProductName, Is.EqualTo(TestConstants.IPhone14ProductName));
         }
 
         [Test]
         public async Task Index_ReturnsFilteredProducts_ByCategoryId()
         {
             // Act
-            var result = await _controller.Index(null, 2, null, null, null, 1);
+            var result = await _controller.Index(null, TestConstants.LaptopCategoryId, null, null, null, 1);
 
-            // Assert
             // Assert
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            var model = viewResult.Model as HomeIndexViewModel;
+            var model = viewResult!.Model as HomeIndexViewModel;
             Assert.That(model, Is.Not.Null);
 
-            Assert.That(model.Products.Count(), Is.EqualTo(1));
-            Assert.That(model.Products.First().ProductName, Is.EqualTo("MacBook Pro"));
+            Assert.That(model!.Products.Count(), Is.EqualTo(1), "Should return only MacBook Pro");
+            Assert.That(model.Products.First().ProductName, Is.EqualTo(TestConstants.MacBookProProductName));
         }
+
+        #endregion
+
+        #region Details Tests
 
         [Test]
         public async Task Details_ReturnsViewResult_WithProduct()
         {
             // Act
-            var result = await _controller.Details(1);
+            var result = await _controller.Details(TestConstants.IPhone14ProductId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            Assert.That(viewResult.Model, Is.InstanceOf<Product>());
+            Assert.That(viewResult!.Model, Is.InstanceOf<Product>());
             var model = viewResult.Model as Product;
             Assert.That(model, Is.Not.Null);
 
-            Assert.That(model.ProductID, Is.EqualTo(1));
+            Assert.That(model!.ProductID, Is.EqualTo(TestConstants.IPhone14ProductId));
+            Assert.That(model.ProductName, Is.EqualTo(TestConstants.IPhone14ProductName));
         }
 
         [Test]
@@ -122,17 +118,22 @@ namespace Assignment_ASP.NET.Tests.Controllers
             var result = await _controller.Details(null);
 
             // Assert
-            Assert.That(result, Is.InstanceOf<NotFoundResult>());
+            Assert.That(result, Is.InstanceOf<NotFoundResult>(), "Should return NotFound when ID is null");
         }
 
         [Test]
         public async Task Details_ReturnsNotFound_WhenProductNotFound()
         {
+            // Arrange
+            const int nonExistentId = 999;
+
             // Act
-            var result = await _controller.Details(99);
+            var result = await _controller.Details(nonExistentId);
 
             // Assert
-            Assert.That(result, Is.InstanceOf<NotFoundResult>());
+            Assert.That(result, Is.InstanceOf<NotFoundResult>(), "Should return NotFound when product doesn't exist");
         }
+
+        #endregion
     }
 }

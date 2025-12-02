@@ -28,6 +28,14 @@ namespace Assignment_ASP.NET.Models
         [StringLength(255)]
         public string ShippingAddress { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } // "COD" hoặc "Bank"
+
+        [Required]
+        [StringLength(50)]
+        public string PaymentStatus { get; set; } // "Pending", "Completed", "Failed"
+
         // Navigation properties
         public virtual User User { get; set; }
 

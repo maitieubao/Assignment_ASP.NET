@@ -1,39 +1,27 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Assignment_ASP.NET.Data;
-using Assignment_ASP.NET.Models;
-using System.Security.Cryptography;
-using System.Text;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Services;
+using Assignment_ASP.NET.Constants;
 
 namespace Assignment_ASP.NET.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IAccountService _accountService;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(IAccountService accountService)
         {
-            _context = context;
-        }
-
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
-            }
+            _accountService = accountService;
         }
 
         // LOGIN
         [HttpGet]
         public IActionResult Login()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity!.IsAuthenticated)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -50,10 +38,7 @@ namespace Assignment_ASP.NET.Controllers
                 return View();
             }
 
-            var hashedPassword = HashPassword(password);
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == hashedPassword);
+            var user = await _accountService.AuthenticateAsync(username, password);
 
             if (user == null)
             {
@@ -61,19 +46,10 @@ namespace Assignment_ASP.NET.Controllers
                 return View();
             }
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.RoleName)
-            };
+            var principal = _accountService.CreateClaimsPrincipal(user);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity));
-
-            if (user.Role.RoleName == "Admin" || user.Role.RoleName == "Employee")
+            if (user.Role.RoleName == Roles.Admin || user.Role.RoleName == Roles.Employee)
             {
                 return RedirectToAction("Index", "Products");
             }
@@ -94,7 +70,7 @@ namespace Assignment_ASP.NET.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity!.IsAuthenticated)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -112,38 +88,18 @@ namespace Assignment_ASP.NET.Controllers
                 return View(user);
             }
 
-            if (string.IsNullOrEmpty(password) || password != confirmPassword)
+            var (success, errorMessage) = await _accountService.RegisterAsync(user, password, confirmPassword);
+
+            if (!success)
             {
-                ModelState.AddModelError(string.Empty, "Mật khẩu không khớp");
+                ModelState.AddModelError(string.Empty, errorMessage);
                 return View(user);
             }
 
-            if (await _context.Users.AnyAsync(u => u.Username == user.Username))
-            {
-                ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
-                return View(user);
-            }
+            // Auto login after register
+            var principal = _accountService.CreateClaimsPrincipal(user);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            if (await _context.Users.AnyAsync(u => u.Email == user.Email))
-            {
-                ModelState.AddModelError("Email", "Email đã tồn tại");
-                return View(user);
-            }
-
-            var customerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Customer");
-            if (customerRole == null)
-            {
-                ModelState.AddModelError(string.Empty, "Lỗi hệ thống");
-                return View(user);
-            }
-
-            user.RoleID = customerRole.RoleID;
-            user.PasswordHash = HashPassword(password);
-
-            _context.Add(user);
-            await _context.SaveChangesAsync();
-
-            await Login(user.Username, password);
             return RedirectToAction("Index", "Home");
         }
 
@@ -154,41 +110,16 @@ namespace Assignment_ASP.NET.Controllers
             return View();
         }
 
-        // TASK 3: ORDER HISTORY
-        [HttpGet]
-        [Authorize(Roles = "Customer")]
-        public async Task<IActionResult> OrderHistory()
-        {
-            var username = User.Identity.Name;
-            var user = await _context.Users
-                .Include(u => u.Orders)
-                    .ThenInclude(o => o.OrderDetails)
-                        .ThenInclude(od => od.Product)
-                .FirstOrDefaultAsync(u => u.Username == username);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            var orders = user.Orders.OrderByDescending(o => o.OrderDate).ToList();
-            return View(orders);
-        }
-
-        // TASK 4: USER PROFILE
+        // USER PROFILE
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Profile()
         {
-            var username = User.Identity.Name;
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == username);
+            var username = User.Identity!.Name;
+            if (username == null) return NotFound();
 
-            if (user == null)
-            {
-                return NotFound();
-            }
+            var user = await _accountService.GetUserByUsernameAsync(username);
+            if (user == null) return NotFound();
 
             return View(user);
         }
@@ -197,13 +128,11 @@ namespace Assignment_ASP.NET.Controllers
         [Authorize]
         public async Task<IActionResult> EditProfile()
         {
-            var username = User.Identity.Name;
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var username = User.Identity!.Name;
+            if (username == null) return NotFound();
 
-            if (user == null)
-            {
-                return NotFound();
-            }
+            var user = await _accountService.GetUserByUsernameAsync(username);
+            if (user == null) return NotFound();
 
             return View(user);
         }
@@ -213,29 +142,28 @@ namespace Assignment_ASP.NET.Controllers
         [Authorize]
         public async Task<IActionResult> EditProfile(User model, string? newPassword)
         {
-            var username = User.Identity.Name;
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var username = User.Identity!.Name;
+            if (username == null) return NotFound();
 
-            if (user == null)
+            var success = await _accountService.UpdateProfileAsync(username, model, newPassword);
+
+            if (!success)
             {
                 return NotFound();
             }
 
-            user.FullName = model.FullName;
-            user.Email = model.Email;
-            user.Phone = model.Phone;
-            user.Address = model.Address;
-
-            if (!string.IsNullOrEmpty(newPassword))
-            {
-                user.PasswordHash = HashPassword(newPassword);
-            }
-
-            _context.Update(user);
-            await _context.SaveChangesAsync();
-
             TempData["SuccessMessage"] = "Cập nhật thành công!";
             return RedirectToAction("Profile");
+        }
+
+        /// <summary>
+        /// GET: /Account/OrderHistory
+        /// Redirect đến MyOrders controller
+        /// </summary>
+        [HttpGet]
+        public IActionResult OrderHistory()
+        {
+            return RedirectToAction("Index", "MyOrders");
         }
     }
 }

@@ -1,45 +1,41 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
-using System.Text.Json;
 
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho CartController
+    /// </summary>
     [TestFixture]
-    public class CartControllerTests
+    public class CartControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private CartController _controller;
-        private Mock<ISession> _mockSession;
+        private CartController _controller = null!;
+        private Mock<ISession> _mockSession = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Cart";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Cart_" + System.Guid.NewGuid())
-                .Options;
+            // Seed products cho cart tests
+            SeedProducts();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed data
-            _context.Products.Add(new Product { ProductID = 1, ProductName = "iPhone 14", Price = 1000, ImageUrl = "img.jpg" });
-            _context.SaveChanges();
-
+        protected override void AdditionalSetup()
+        {
             _mockSession = new Mock<ISession>();
             
             var httpContext = new DefaultHttpContext();
             httpContext.Session = _mockSession.Object;
 
-            _controller = new CartController(_context);
+            _controller = new CartController(Context);
             _controller.ControllerContext = new ControllerContext()
             {
                 HttpContext = httpContext
@@ -47,28 +43,25 @@ namespace Assignment_ASP.NET.Tests.Controllers
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Add Tests
 
         [Test]
         public async Task Add_AddsNewItemToCart_WhenCartIsEmpty()
         {
             // Arrange
-            byte[] outBytes = null;
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out outBytes)).Returns(false);
+            SessionHelper.SetupEmptyCart(_mockSession);
 
             // Act
-            var result = await _controller.Add(1, 1);
+            var result = await _controller.Add(TestConstants.IPhone14ProductId, 1);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            
-            // Verify Session.Set was called
-            _mockSession.Verify(s => s.Set(CartController.CART_KEY, It.IsAny<byte[]>()), Times.Once);
+            SessionHelper.VerifyCartSet(_mockSession, Times.Once());
         }
 
         [Test]
@@ -77,22 +70,20 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Arrange
             var existingCart = new List<CartItem>
             {
-                new CartItem { ProductID = 1, Quantity = 1, Price = 1000 }
+                TestDataBuilder.CreateCartItem(TestConstants.IPhone14ProductId, 1, TestConstants.IPhone14Price)
             };
-            var serialized = JsonSerializer.Serialize(existingCart);
-            var bytes = Encoding.UTF8.GetBytes(serialized);
-
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out bytes)).Returns(true);
+            SessionHelper.SetupCartWithItems(_mockSession, existingCart);
 
             // Act
-            await _controller.Add(1, 1);
+            await _controller.Add(TestConstants.IPhone14ProductId, 1);
 
             // Assert
-            // Verify Set is called with updated quantity (2)
-            _mockSession.Verify(s => s.Set(CartController.CART_KEY, It.Is<byte[]>(b => 
-                JsonSerializer.Deserialize<List<CartItem>>(Encoding.UTF8.GetString(b), (JsonSerializerOptions)null).First().Quantity == 2
-            )), Times.Once);
+            SessionHelper.VerifyCartSetWithQuantity(_mockSession, TestConstants.IPhone14ProductId, 2);
         }
+
+        #endregion
+
+        #region Remove Tests
 
         [Test]
         public void Remove_RemovesItemFromCart()
@@ -100,24 +91,21 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Arrange
             var existingCart = new List<CartItem>
             {
-                new CartItem { ProductID = 1, Quantity = 1, Price = 1000 }
+                TestDataBuilder.CreateCartItem(TestConstants.IPhone14ProductId, 1, TestConstants.IPhone14Price)
             };
-            var serialized = JsonSerializer.Serialize(existingCart);
-            var bytes = Encoding.UTF8.GetBytes(serialized);
-
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out bytes)).Returns(true);
+            SessionHelper.SetupCartWithItems(_mockSession, existingCart);
 
             // Act
-            var result = _controller.Remove(1);
+            var result = _controller.Remove(TestConstants.IPhone14ProductId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            
-            // Verify Set is called with empty list or list without item
-            _mockSession.Verify(s => s.Set(CartController.CART_KEY, It.Is<byte[]>(b => 
-                JsonSerializer.Deserialize<List<CartItem>>(Encoding.UTF8.GetString(b), (JsonSerializerOptions)null).Count == 0
-            )), Times.Once);
+            SessionHelper.VerifyCartSetWithItemCount(_mockSession, 0);
         }
+
+        #endregion
+
+        #region Update Tests
 
         [Test]
         public void Update_UpdatesQuantity()
@@ -125,23 +113,22 @@ namespace Assignment_ASP.NET.Tests.Controllers
             // Arrange
             var existingCart = new List<CartItem>
             {
-                new CartItem { ProductID = 1, Quantity = 1, Price = 1000 }
+                TestDataBuilder.CreateCartItem(TestConstants.IPhone14ProductId, 1, TestConstants.IPhone14Price)
             };
-            var serialized = JsonSerializer.Serialize(existingCart);
-            var bytes = Encoding.UTF8.GetBytes(serialized);
-
-            _mockSession.Setup(s => s.TryGetValue(CartController.CART_KEY, out bytes)).Returns(true);
+            SessionHelper.SetupCartWithItems(_mockSession, existingCart);
+            const int newQuantity = 5;
 
             // Act
-            var result = _controller.Update(1, 5);
+            var result = _controller.Update(TestConstants.IPhone14ProductId, newQuantity);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            
-            _mockSession.Verify(s => s.Set(CartController.CART_KEY, It.Is<byte[]>(b => 
-                JsonSerializer.Deserialize<List<CartItem>>(Encoding.UTF8.GetString(b), (JsonSerializerOptions)null).First().Quantity == 5
-            )), Times.Once);
+            SessionHelper.VerifyCartSetWithQuantity(_mockSession, TestConstants.IPhone14ProductId, newQuantity);
         }
+
+        #endregion
+
+        #region Clear Tests
 
         [Test]
         public void Clear_RemovesCartFromSession()
@@ -151,7 +138,9 @@ namespace Assignment_ASP.NET.Tests.Controllers
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            _mockSession.Verify(s => s.Remove(CartController.CART_KEY), Times.Once);
+            SessionHelper.VerifyCartRemoved(_mockSession, Times.Once());
         }
+
+        #endregion
     }
 }

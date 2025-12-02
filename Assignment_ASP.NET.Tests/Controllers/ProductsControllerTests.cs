@@ -1,56 +1,62 @@
 using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Tests.Base;
+using Assignment_ASP.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-
 namespace Assignment_ASP.NET.Tests.Controllers
 {
+    /// <summary>
+    /// Unit tests cho ProductsController
+    /// </summary>
     [TestFixture]
-    public class ProductsControllerTests
+    public class ProductsControllerTests : ControllerTestBase
     {
-        private ApplicationDbContext _context;
-        private Mock<IWebHostEnvironment> _mockEnvironment;
-        private ProductsController _controller;
+        private Mock<IWebHostEnvironment> _mockEnvironment = null!;
+        private ProductsController _controller = null!;
 
-        [SetUp]
-        public void Setup()
+        protected override string DatabaseNamePrefix => "TestDatabase_Products";
+
+        protected override void SeedCommonData()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_Products_" + System.Guid.NewGuid())
-                .Options;
+            // Seed categories và products cho product management tests
+            SeedCategories();
+            
+            // Seed một product cụ thể cho tests
+            Context.Products.Add(TestDataBuilder.CreateProduct(
+                TestConstants.IPhone14ProductId,
+                TestConstants.IPhone14ProductName,
+                TestConstants.PhoneCategoryId,
+                TestConstants.IPhone14Price
+            ));
+            Context.SaveChanges();
+        }
 
-            _context = new ApplicationDbContext(options);
-
-            // Seed data
-            _context.Categories.Add(new Category { CategoryID = 1, CategoryName = "Phone" });
-            _context.Products.Add(new Product { ProductID = 1, ProductName = "iPhone 14", CategoryID = 1, Price = 1000, ImageUrl = "/images/test.jpg" });
-            _context.SaveChanges();
-
+        protected override void AdditionalSetup()
+        {
             _mockEnvironment = new Mock<IWebHostEnvironment>();
             _mockEnvironment.Setup(m => m.WebRootPath).Returns("wwwroot");
 
-            _controller = new ProductsController(_context, _mockEnvironment.Object);
+            _controller = new ProductsController(Context, _mockEnvironment.Object);
             _controller.TempData = new TempDataDictionary(new DefaultHttpContext(), Mock.Of<ITempDataProvider>());
         }
 
         [TearDown]
-        public void TearDown()
+        protected override void AdditionalTearDown()
         {
-            _context.Database.EnsureDeleted();
-            _context.Dispose();
-            _controller.Dispose();
+            _controller?.Dispose();
         }
+
+        #region Index Tests
 
         [Test]
         public async Task Index_ReturnsViewResult_WithProducts()
@@ -62,46 +68,51 @@ namespace Assignment_ASP.NET.Tests.Controllers
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            var model = viewResult.Model as List<Product>;
+            var model = viewResult!.Model as List<Product>;
             Assert.That(model, Is.Not.Null);
-            Assert.That(model.Count, Is.EqualTo(1));
+            Assert.That(model!.Count, Is.EqualTo(1), "Should return 1 product");
         }
+
+        #endregion
+
+        #region Details Tests
 
         [Test]
         public async Task Details_ReturnsViewResult_WithProduct()
         {
             // Act
-            var result = await _controller.Details(1);
+            var result = await _controller.Details(TestConstants.IPhone14ProductId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<ViewResult>());
             var viewResult = result as ViewResult;
             Assert.That(viewResult, Is.Not.Null);
-            var model = viewResult.Model as Product;
+            var model = viewResult!.Model as Product;
             Assert.That(model, Is.Not.Null);
-            Assert.That(model.ProductID, Is.EqualTo(1));
+            Assert.That(model!.ProductID, Is.EqualTo(TestConstants.IPhone14ProductId));
+            Assert.That(model.ProductName, Is.EqualTo(TestConstants.IPhone14ProductName));
         }
+
+        #endregion
+
+        #region Create Tests
 
         [Test]
         public async Task Create_Post_ValidModel_RedirectsToIndex()
         {
             // Arrange
-            var product = new Product { ProductName = "New Product", Price = 500, CategoryID = 1 };
+            var product = new Product 
+            { 
+                ProductName = "New Product", 
+                Price = 500, 
+                CategoryID = TestConstants.PhoneCategoryId 
+            };
+            
             var mockFile = new Mock<IFormFile>();
             mockFile.Setup(f => f.FileName).Returns("test.jpg");
             mockFile.Setup(f => f.Length).Returns(1024);
             
-            // Mock file copy
-            // Since UploadFile uses file.CopyToAsync, we need to mock it if we want to verify it, 
-            // but for this test we just want to ensure it runs. 
-            // However, UploadFile creates a FileStream which might fail if directory doesn't exist or path is invalid.
-            // We mocked WebRootPath to "wwwroot". We should ensure directory creation doesn't fail or we mock FileStream? 
-            // We can't easily mock FileStream constructor.
-            // We can rely on the fact that InMemory DB doesn't actually write files to disk for the DB part, 
-            // but the controller code DOES write to disk.
-            // We should probably skip file upload test or use a real temp directory for WebRootPath.
-            
-            // Let's use a temp directory for WebRootPath
+            // Use a temp directory for WebRootPath to avoid file system issues
             var tempPath = Path.Combine(Path.GetTempPath(), "TestWebRoot_" + System.Guid.NewGuid());
             Directory.CreateDirectory(tempPath);
             _mockEnvironment.Setup(m => m.WebRootPath).Returns(tempPath);
@@ -113,19 +124,24 @@ namespace Assignment_ASP.NET.Tests.Controllers
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
             Assert.That(redirectResult, Is.Not.Null);
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
+            Assert.That(redirectResult!.ActionName, Is.EqualTo(TestConstants.IndexAction));
             
-            Assert.That(_context.Products.Count(), Is.EqualTo(2));
+            Assert.That(Context.Products.Count(), Is.EqualTo(2), "Should have 2 products after adding new one");
 
             // Cleanup
             if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
         }
 
+        #endregion
+
+        #region Edit Tests
+
         [Test]
         public async Task Edit_Post_ValidModel_RedirectsToIndex()
         {
             // Arrange
-            var product = await _context.Products.FirstAsync();
+            var product = Context.Products.First();
+            var originalName = product.ProductName;
             product.ProductName = "Updated Product";
 
             // Act
@@ -135,21 +151,35 @@ namespace Assignment_ASP.NET.Tests.Controllers
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
             var redirectResult = result as RedirectToActionResult;
             Assert.That(redirectResult, Is.Not.Null);
-            Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
+            Assert.That(redirectResult!.ActionName, Is.EqualTo(TestConstants.IndexAction));
 
-            var updatedProduct = await _context.Products.FindAsync(product.ProductID);
-            Assert.That(updatedProduct.ProductName, Is.EqualTo("Updated Product"));
+            var updatedProduct = await Context.Products.FindAsync(product.ProductID);
+            Assert.That(updatedProduct, Is.Not.Null);
+            Assert.That(updatedProduct!.ProductName, Is.EqualTo("Updated Product"));
+            Assert.That(updatedProduct.ProductName, Is.Not.EqualTo(originalName), "Product name should be updated");
         }
+
+        #endregion
+
+        #region Delete Tests
 
         [Test]
         public async Task Delete_Post_RedirectsToIndex()
         {
+            // Arrange
+            var initialCount = Context.Products.Count();
+
             // Act
-            var result = await _controller.DeleteConfirmed(1);
+            var result = await _controller.DeleteConfirmed(TestConstants.IPhone14ProductId);
 
             // Assert
             Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-            Assert.That(_context.Products.Count(), Is.EqualTo(0));
+            Assert.That(Context.Products.Count(), Is.EqualTo(initialCount - 1), "Should have one less product");
+            
+            var deletedProduct = await Context.Products.FindAsync(TestConstants.IPhone14ProductId);
+            Assert.That(deletedProduct, Is.Null, "Deleted product should not exist");
         }
+
+        #endregion
     }
 }
