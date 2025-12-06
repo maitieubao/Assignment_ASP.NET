@@ -20,7 +20,15 @@ namespace Assignment_ASP.NET.Services
 
         public string CreatePaymentUrl(HttpContext context, Order order)
         {
-            var timeZoneById = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            TimeZoneInfo timeZoneById;
+            try
+            {
+                timeZoneById = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                timeZoneById = TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
+            }
             var timeNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneById);
             var tick = DateTime.Now.Ticks.ToString();
             var pay = new VnPayLibrary();

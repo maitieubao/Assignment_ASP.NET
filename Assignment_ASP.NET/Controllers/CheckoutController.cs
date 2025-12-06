@@ -185,6 +185,7 @@ namespace Assignment_ASP.NET.Controllers
         /// Xử lý callback từ VNPAY
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> PaymentCallback()
         {
             var response = _vnPayService.PaymentExecute(Request.Query);
