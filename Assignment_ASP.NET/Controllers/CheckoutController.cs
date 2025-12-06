@@ -100,26 +100,14 @@ namespace Assignment_ASP.NET.Controllers
                 _cartService.ClearCart(HttpContext);
 
                 // Chuyển hướng dựa trên phương thức thanh toán
-                string paymentUrl = paymentMethod switch
+                return paymentMethod switch
                 {
-                    PaymentMethod.VnPay => _vnPayService.CreatePaymentUrl(HttpContext, order),
-                    PaymentMethod.ZaloPay => await _zaloPayService.CreatePaymentUrl(HttpContext, order),
-                    PaymentMethod.MoMo => await _momoService.CreatePaymentUrl(HttpContext, order),
-                    _ => Url.Action("OrderConfirmation", new { orderId = order.OrderID })
+                    PaymentMethod.VnPay => Redirect(_vnPayService.CreatePaymentUrl(HttpContext, order)),
+                    PaymentMethod.ZaloPay => Redirect(_zaloPayService.CreatePaymentUrl(HttpContext, order)),
+                    PaymentMethod.MoMo => Redirect(_momoService.CreatePaymentUrl(HttpContext, order)),
+                    _ => RedirectToAction("OrderConfirmation", new { orderId = order.OrderID })
                 };
 
-                if (string.IsNullOrEmpty(paymentUrl))
-                {
-                    TempData["Error"] = "Không thể tạo URL thanh toán.";
-                    return RedirectToAction("Index");
-                }
-                
-                if (paymentMethod == PaymentMethod.COD)
-                {
-                    return Redirect(paymentUrl);
-                }
-
-                return Redirect(paymentUrl);
             }
             catch (Exception ex)
             {
