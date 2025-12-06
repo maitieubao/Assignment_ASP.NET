@@ -1,0 +1,112 @@
+@model IEnumerable<Assignment_ASP.NET.Models.Order>
+@{
+    ViewData["Title"] = "Lịch sử mua hàng";
+}
+
+<div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900 mb-2">
+            <i class="bi bi-clock-history text-indigo-600 mr-2"></i>
+            Lịch sử mua hàng
+        </h1>
+        <p class="text-slate-600">Xem tất cả đơn hàng của bạn</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="bg-white rounded-xl border border-slate-200 p-12 text-center">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="bi bi-cart-x text-slate-400 text-4xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Chưa có đơn hàng nào</h3>
+            <p class="text-slate-600mb-6">Bạn chưa mua sản phẩm nào</p>
+            <a asp-controller="Home" asp-action="Index" 
+               class="inline-block px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">
+                Mua sắm ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (var order in Model)
+            {
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <div class="flex items-center space-x-3">
+                                    <h3 class="font-bold text-slate-900">Đơn hàng #@order.OrderID</h3>
+                                    @if (order.Status == "Đã giao")
+                                    {
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                            <i class="bi bi-check-circle mr-1"></i>@order.Status
+                                        </span>
+                                    }
+                                    else if (order.Status == "Đang xử lý")
+                                    {
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                            <i class="bi bi-clock mr-1"></i>@order.Status
+                                        </span>
+                                    }
+                                    else if (order.Status == "Đã hủy")
+                                    {
+                                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                                            <i class="bi bi-x-circle mr-1"></i>@order.Status
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">
+                                            @order.Status
+                                        </span>
+                                    }
+                                </div>
+                                <p class="text-sm text-slate-500 mt-1">
+                                    <i class="bi bi-calendar3 mr-1"></i>
+                                    @order.OrderDate.ToString("dd/MM/yyyy HH:mm")
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-slate-600">Tổng tiền</p>
+                                <p class="text-2xl font-bold text-indigo-600">@order.TotalAmount.ToString("N0")₫</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="space-y-3">
+                                @foreach (var detail in order.OrderDetails)
+                                {
+                                    <div class="flex items-center space-x-4">
+                                        <img src="@(detail.Product?.ImageUrl ?? "/images/placeholder.jpg")" 
+                                             alt="@detail.Product?.ProductName"
+                                             class="w-16 h-16 object-cover rounded-lg" />
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-slate-900 text-sm">@detail.Product?.ProductName</p>
+                                            <p class="text-xs text-slate-500">Số lượng: @detail.Quantity</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-slate-900">@detail.Price.ToString("N0")₫</p>
+                                            <p class="text-xs text-slate-500">Thành tiền: @(detail.Price * detail.Quantity).ToString("N0")₫</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 mt-4 pt-4 flex items-center justify-between">
+                            <div class="text-sm text-slate-600">
+                                <i class="bi bi-geo-alt mr-1"></i>
+                                Giao đến: <span class="font-medium">@order.ShippingAddress</span>
+                            </div>
+                            <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderID"
+                               class="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100">
+                                <i class="bi bi-eye mr-1"></i>Chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

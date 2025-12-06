@@ -1,0 +1,49 @@
+﻿@model Assignment_ASP.NET.Models.User
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a asp-action="Index" class="text-slate-600 hover:text-indigo-600 text-sm">
+            <i class="bi bi-arrow-left mr-2"></i>Quay lại
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-slate-900">@Model.FullName</h1>
+            <div class="flex space-x-2">
+                <a asp-action="Edit" asp-route-id="@Model.UserID" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
+                    <i class="bi bi-pencil mr-1"></i>Sửa
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.UserID" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                    <i class="bi bi-trash mr-1"></i>Xóa
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="text-xs text-slate-600 mb-1">Tên đăng nhập</p>
+                <p class="font-semibold text-slate-900">@Model.Username</p>
+            </div>
+            <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="text-xs text-slate-600 mb-1">Email</p>
+                <p class="text-slate-900">@Model.Email</p>
+            </div>
+            <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="text-xs text-slate-600 mb-1">Số điện thoại</p>
+                <p class="text-slate-900">@(Model.Phone ?? "Chưa cập nhật")</p>
+            </div>
+            <div class="p-5 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="text-xs text-slate-600 mb-1">Vai trò</p>
+                <p class="font-semibold text-indigo-600">@Model.Role?.RoleName</p>
+            </div>
+            <div class="md:col-span-2 p-5 bg-slate-50 rounded-xl border border-slate-200">
+                <p class="text-xs text-slate-600 mb-1">Địa chỉ</p>
+                <p class="text-slate-900">@(Model.Address ?? "Chưa cập nhật")</p>
+            </div>
+        </div>
+    </div>
+</div>

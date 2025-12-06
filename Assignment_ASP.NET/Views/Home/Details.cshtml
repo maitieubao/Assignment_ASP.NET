@@ -1,0 +1,384 @@
+﻿@model Assignment_ASP.NET.Models.Product
+@{
+    ViewData["Title"] = Model.ProductName;
+    var keyFeatures = Model.KeyFeatures?.Split('|') ?? new string[0];
+    var specifications = Model.Specifications?.Split('|') ?? new string[0];
+}
+
+<div class="max-w-7xl mx-auto">
+    
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-sm">
+        <ol class="flex items-center space-x-2 text-slate-600">
+            <li><a asp-controller="Home" asp-action="Index" class="hover:text-indigo-600">Trang chủ</a></li>
+            <li><i class="bi bi-chevron-right text-xs"></i></li>
+            <li><a href="#" class="hover:text-indigo-600">@Model.Category?.CategoryName</a></li>
+            <li><i class="bi bi-chevron-right text-xs"></i></li>
+            <li class="text-slate-900 font-medium">@Model.ProductName</li>
+        </ol>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Image -->
+        <div>
+            <div class="bg-white border border-slate-200 p-8">
+                <img src="@(Model.ImageUrl ?? "/images/placeholder.jpg")" 
+                     alt="@Model.ProductName" 
+                     class="w-full h-auto"/>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div>
+            <div class="bg-white border border-slate-200 p-8">
+                
+                <span class="inline-block px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm font-medium mb-4">
+                    <i class="bi bi-tag mr-1"></i>
+                    @Model.Category?.CategoryName
+                </span>
+
+                <h1 class="text-3xl font-bold text-slate-900 mb-4">@Model.ProductName</h1>
+
+                <div class="mb-6">
+                    <p class="text-4xl font-bold text-indigo-600">
+                        @Model.Price.ToString("N0")₫
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    @if (Model.StockQuantity > 10)
+                    {
+                        <span class="inline-flex items-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium">
+                            <i class="bi bi-check-circle-fill mr-2"></i>
+                            Còn hàng (@Model.StockQuantity)
+                        </span>
+                    }
+                    else if (Model.StockQuantity > 0)
+                    {
+                        <span class="inline-flex items-center px-4 py-2 bg-orange-50 text-orange-700 text-sm font-medium">
+                            <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                            Chỉ còn @Model.StockQuantity
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="inline-flex items-center px-4 py-2 bg-red-50 text-red-700 text-sm font-medium">
+                            <i class="bi bi-x-circle-fill mr-2"></i>
+                            Hết hàng
+                        </span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="mb-6 p-5 bg-slate-50 border border-slate-200">
+                        <h3 class="font-bold text-slate-900 mb-3 text-sm flex items-center">
+                            <i class="bi bi-card-text text-indigo-600 mr-2"></i>
+                            MÔ TẢ
+                        </h3>
+                        <p class="text-slate-700 leading-relaxed text-sm">@Model.Description</p>
+                    </div>
+                }
+
+                @if (!User.Identity.IsAuthenticated || User.IsInRole("Customer"))
+                {
+                    <form asp-controller="Cart" asp-action="Add" method="post" class="space-y-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@Model.ProductID" />
+                        
+                        <div class="flex items-center space-x-4">
+                            <label class="font-semibold text-slate-700 text-sm">Số lượng:</label>
+                            <input type="number" 
+                                   name="quantity" 
+                                   value="1" 
+                                   min="1" 
+                                   max="@Model.StockQuantity"
+                                   class="w-24 px-4 py-2 border border-slate-300 focus:outline-none focus:border-indigo-500 text-sm"/>
+                        </div>
+
+                        <button type="submit" 
+                                class="w-full py-3.5 bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+                                @(Model.StockQuantity == 0 ? "disabled" : "")>
+                            <i class="bi bi-cart-plus mr-2"></i>
+                            @(Model.StockQuantity > 0 ? "Thêm vào giỏ hàng" : "Hết hàng")
+                        </button>
+                    </form>
+                }
+
+                <div class="mt-8 pt-6 border-t border-slate-200 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <i class="bi bi-shield-check text-indigo-600 text-2xl mb-2 block"></i>
+                        <p class="text-xs text-slate-600">@(Model.WarrantyPeriod ?? "Bảo hành 12 tháng")</p>
+                    </div>
+                    <div>
+                        <i class="bi bi-truck text-indigo-600 text-2xl mb-2 block"></i>
+                        <p class="text-xs text-slate-600">Giao nhanh</p>
+                    </div>
+                    <div>
+                        <i class="bi bi-arrow-clockwise text-indigo-600 text-2xl mb-2 block"></i>
+                        <p class="text-xs text-slate-600">Đổi trả 15 ngày</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Tabs -->
+    <div class="mt-8">
+        <div class="bg-white border border-slate-200">
+            <!-- Tab Headers -->
+            <div class="border-b border-slate-200">
+                <div class="flex">
+                    <button class="tab-button active px-6 py-4 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600" data-tab="features">
+                        CÔNG NGHỆ NỔI BẬT
+                    </button>
+                    <button class="tab-button px-6 py-4 font-semibold text-sm border-b-2 border-transparent text-slate-600 hover:text-indigo-600" data-tab="specs">
+                        THÔNG SỐ KỸ THUẬT
+                    </button>
+                    <button class="tab-button px-6 py-4 font-semibold text-sm border-b-2 border-transparent text-slate-600 hover:text-indigo-600" data-tab="info">
+                        THÔNG TIN CHUNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="p-8">
+                <!-- Features Tab -->
+                <div id="features-tab" class="tab-content">
+                    @if (keyFeatures.Length > 0)
+                    {
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach (var feature in keyFeatures)
+                            {
+                                <div class="flex items-start space-x-3 p-4 bg-slate-50 border border-slate-200">
+                                    <i class="bi bi-check-circle-fill text-green-600 text-xl mt-0.5"></i>
+                                    <span class="text-slate-800">@feature</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-slate-500 italic">Thông tin công nghệ đang được cập nhật.</p>
+                    }
+                </div>
+
+                <!-- Specifications Tab -->
+                <div id="specs-tab" class="tab-content hidden">
+                    @if (specifications.Length > 0)
+                    {
+                        <div class="space-y-3">
+                            @foreach (var spec in specifications)
+                            {
+                                var parts = spec.Split(':');
+                                if (parts.Length == 2)
+                                {
+                                    <div class="flex border-b border-slate-200 pb-3">
+                                        <div class="w-1/3 font-semibold text-slate-700">@parts[0]</div>
+                                        <div class="w-2/3 text-slate-600">@parts[1]</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-slate-500 italic">Thông số kỹ thuật đang được cập nhật.</p>
+                    }
+                </div>
+
+                <!-- General Info Tab -->
+                <div id="info-tab" class="tab-content hidden">
+                    <div class="space-y-3">
+                        <div class="flex border-b border-slate-200 pb-3">
+                            <div class="w-1/3 font-semibold text-slate-700">Nơi sản xuất</div>
+                            <div class="w-2/3 text-slate-600">@(Model.Manufacturer ?? "Đang cập nhật")</div>
+                        </div>
+                        <div class="flex border-b border-slate-200 pb-3">
+                            <div class="w-1/3 font-semibold text-slate-700">Bảo hành</div>
+                            <div class="w-2/3 text-slate-600">@(Model.WarrantyPeriod ?? "12 tháng")</div>
+                        </div>
+                        <div class="flex border-b border-slate-200 pb-3">
+                            <div class="w-1/3 font-semibold text-slate-700">Màu sắc</div>
+                            <div class="w-2/3 text-slate-600">@(Model.Color ?? "Đa dạng")</div>
+                        </div>
+                        <div class="flex border-b border-slate-200 pb-3">
+                            <div class="w-1/3 font-semibold text-slate-700">Kích thước</div>
+                            <div class="w-2/3 text-slate-600">@(Model.Size ?? "Standard")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="mt-12 border-t border-slate-200 pt-10">
+        <h2 class="text-2xl font-bold text-slate-900 mb-8">Đánh giá sản phẩm</h2>
+
+        <!-- Reviews Summary -->
+        @if (Model.Reviews != null && Model.Reviews.Any())
+        {
+            var avgRating = Model.Reviews.Average(r => r.Rating);
+            var totalReviews = Model.Reviews.Count();
+            var ratingCounts = Enumerable.Range(1, 5).Select(i => new { Star = i, Count = Model.Reviews.Count(r => r.Rating == i) }).Reverse().ToList();
+
+            <div class="bg-white border border-slate-200 p-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Average Rating -->
+                    <div class="text-center border-r border-slate-200">
+                        <div class="text-5xl font-bold text-indigo-600 mb-2">@avgRating.ToString("0.0")</div>
+                        <div class="flex justify-center text-yellow-400 text-2xl mb-2">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= Math.Round(avgRating))
+                                {
+                                    <i class="bi bi-star-fill"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-star text-slate-300"></i>
+                                }
+                            }
+                        </div>
+                        <p class="text-slate-600">@totalReviews đánh giá</p>
+                    </div>
+
+                    <!-- Rating Distribution -->
+                    <div class="space-y-2">
+                        @foreach (var rating in ratingCounts)
+                        {
+                            var percentage = totalReviews > 0 ? (rating.Count * 100.0 / totalReviews) : 0;
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-slate-600 w-12">@rating.Star sao</span>
+                                <div class="flex-1 bg-slate-200 h-2 overflow-hidden">
+                                    <div class="bg-yellow-400 h-full" style="width: @percentage%"></div>
+                                </div>
+                                <span class="text-sm text-slate-600 w-12 text-right">@rating.Count</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Reviews List -->
+        <div class="space-y-4 mb-10">
+            @if (Model.Reviews != null && Model.Reviews.Any())
+            {
+                foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                {
+                    <div class="bg-white border border-slate-200 p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                                    @(review.User?.FullName?.FirstOrDefault() ?? 'U')
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-slate-900">@(review.User?.FullName ?? "Người dùng")</p>
+                                    <p class="text-xs text-slate-500">@review.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                                </div>
+                            </div>
+                            <div class="flex text-yellow-400">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= review.Rating)
+                                    {
+                                        <i class="bi bi-star-fill"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-star text-slate-300"></i>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <p class="text-slate-700 leading-relaxed">@review.Comment</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-12 bg-slate-50 border border-slate-200">
+                    <i class="bi bi-chat-left-text text-slate-300 text-5xl mb-4 block"></i>
+                    <p class="text-slate-500 italic">Chưa có đánh giá nào cho sản phẩm này.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Add Review Form -->
+        @if (User.Identity.IsAuthenticated)
+        {
+            <div class="bg-white border border-slate-200 p-8">
+                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center">
+                    <i class="bi bi-pencil-square text-indigo-600 mr-2"></i>Viết đánh giá của bạn
+                </h3>
+                <form asp-controller="Reviews" asp-action="Add" method="post">
+                    <input type="hidden" name="productId" value="@Model.ProductID" />
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Đánh giá sao</label>
+                        <div class="relative">
+                            <select name="rating" class="appearance-none w-full md:w-1/3 px-4 py-3 border border-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white">
+                                <option value="5">5 Sao - Tuyệt vời</option>
+                                <option value="4">4 Sao - Tốt</option>
+                                <option value="3">3 Sao - Bình thường</option>
+                                <option value="2">2 Sao - Tệ</option>
+                                <option value="1">1 Sao - Rất tệ</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700 md:w-1/3 justify-end pr-4">
+                                <i class="bi bi-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Nhận xét</label>
+                        <textarea name="comment" rows="4" class="w-full px-4 py-3 border border-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" placeholder="Chia sẻ cảm nhận chi tiết của bạn về sản phẩm..."></textarea>
+                    </div>
+
+                    <button type="submit" class="px-8 py-3 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-md hover:shadow-lg">
+                        Gửi đánh giá
+                    </button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="bg-indigo-50 p-8 text-center border border-indigo-100">
+                <i class="bi bi-person-lock text-indigo-400 text-4xl mb-3 block"></i>
+                <p class="text-indigo-900 font-medium mb-4">Bạn cần đăng nhập để viết đánh giá.</p>
+                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="inline-block px-6 py-2.5 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
+                    Đăng nhập ngay
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+// Tab switching functionality
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove active class from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
+            btn.classList.add('border-transparent', 'text-slate-600');
+        });
+        
+        // Add active class to clicked button
+        this.classList.add('active', 'border-indigo-600', 'text-indigo-600');
+        this.classList.remove('border-transparent', 'text-slate-600');
+        
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        // Show selected tab content
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId + '-tab').classList.remove('hidden');
+    });
+});
+</script>
