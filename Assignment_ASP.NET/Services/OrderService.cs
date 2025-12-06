@@ -87,8 +87,11 @@ namespace Assignment_ASP.NET.Services
 
             order.PaymentStatus = paymentStatus;
 
-            // Nếu thanh toán thành công qua Bank, tự động duyệt đơn
-            if (paymentStatus == PaymentStatus.Completed && order.PaymentMethod == PaymentMethod.Bank)
+            // Nếu thanh toán thành công qua các cổng thanh toán online, tự động duyệt đơn
+            if (paymentStatus == PaymentStatus.Completed &&
+                (order.PaymentMethod == PaymentMethod.VnPay ||
+                 order.PaymentMethod == PaymentMethod.ZaloPay ||
+                 order.PaymentMethod == PaymentMethod.MoMo))
             {
                 order.Status = OrderStatus.Approved;
             }

@@ -17,8 +17,9 @@ namespace Assignment_ASP.NET.Constants
     public static class PaymentMethod
     {
         public const string COD = "COD";
-        public const string Bank = "Bank";
         public const string VnPay = "VnPay";
+        public const string ZaloPay = "ZaloPay";
+        public const string MoMo = "MoMo";
     }
 
     /// <summary>

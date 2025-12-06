@@ -15,23 +15,25 @@ namespace Assignment_ASP.NET.Controllers
         private readonly IOrderService _orderService;
         private readonly ICartService _cartService;
         private readonly IVnPayService _vnPayService;
+        private readonly IZaloPayService _zaloPayService;
+        private readonly IMoMoService _momoService;
 
         public CheckoutController(
             ApplicationDbContext context,
             IOrderService orderService,
             ICartService cartService,
-            IVnPayService vnPayService)
+            IVnPayService vnPayService,
+            IZaloPayService zaloPayService,
+            IMoMoService momoService)
         {
             _context = context;
             _orderService = orderService;
             _cartService = cartService;
             _vnPayService = vnPayService;
+            _zaloPayService = zaloPayService;
+            _momoService = momoService;
         }
 
-        /// <summary>
-        /// GET: /Checkout/Index
-        /// Hiển thị trang checkout với thông tin đơn hàng
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -55,10 +57,6 @@ namespace Assignment_ASP.NET.Controllers
             return View(user);
         }
 
-        /// <summary>
-        /// POST: /Checkout/PlaceOrder
-        /// Xử lý đặt hàng
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PlaceOrder(string paymentMethod, string shippingAddress)
@@ -72,8 +70,9 @@ namespace Assignment_ASP.NET.Controllers
             // Validate payment method
             if (string.IsNullOrEmpty(paymentMethod) ||
                 (paymentMethod != PaymentMethod.COD && 
-                 paymentMethod != PaymentMethod.Bank &&
-                 paymentMethod != PaymentMethod.VnPay))
+                 paymentMethod != PaymentMethod.VnPay &&
+                 paymentMethod != PaymentMethod.ZaloPay &&
+                 paymentMethod != PaymentMethod.MoMo))
             {
                 TempData["Error"] = "Vui lòng chọn phương thức thanh toán";
                 return RedirectToAction("Index");
@@ -89,7 +88,7 @@ namespace Assignment_ASP.NET.Controllers
 
             try
             {
-                // Tạo đơn hàng thông qua OrderService
+                // Tạo đơn hàng
                 var order = await _orderService.CreateOrderAsync(
                     User.GetUserId(),
                     cart,
@@ -101,19 +100,26 @@ namespace Assignment_ASP.NET.Controllers
                 _cartService.ClearCart(HttpContext);
 
                 // Chuyển hướng dựa trên phương thức thanh toán
-                if (paymentMethod == PaymentMethod.VnPay)
+                string paymentUrl = paymentMethod switch
                 {
-                    var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, order);
+                    PaymentMethod.VnPay => _vnPayService.CreatePaymentUrl(HttpContext, order),
+                    PaymentMethod.ZaloPay => await _zaloPayService.CreatePaymentUrl(HttpContext, order),
+                    PaymentMethod.MoMo => await _momoService.CreatePaymentUrl(HttpContext, order),
+                    _ => Url.Action("OrderConfirmation", new { orderId = order.OrderID })
+                };
+
+                if (string.IsNullOrEmpty(paymentUrl))
+                {
+                    TempData["Error"] = "Không thể tạo URL thanh toán.";
+                    return RedirectToAction("Index");
+                }
+                
+                if (paymentMethod == PaymentMethod.COD)
+                {
                     return Redirect(paymentUrl);
                 }
-                else if (paymentMethod == PaymentMethod.Bank)
-                {
-                    return RedirectToAction("BankPayment", new { orderId = order.OrderID });
-                }
-                else
-                {
-                    return RedirectToAction("OrderConfirmation", new { orderId = order.OrderID });
-                }
+
+                return Redirect(paymentUrl);
             }
             catch (Exception ex)
             {
@@ -122,68 +128,6 @@ namespace Assignment_ASP.NET.Controllers
             }
         }
 
-        /// <summary>
-        /// GET: /Checkout/BankPayment
-        /// Hiển thị trang thanh toán ngân hàng
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> BankPayment(int orderId)
-        {
-            var order = await _orderService.GetOrderByIdAsync(orderId, includeDetails: true);
-
-            if (order == null)
-            {
-                return NotFound("Không tìm thấy đơn hàng");
-            }
-
-            // Kiểm tra quyền truy cập
-            if (order.UserID != User.GetUserId())
-            {
-                return Forbid();
-            }
-
-            return View(order);
-        }
-
-        /// <summary>
-        /// POST: /Checkout/ProcessBankPayment
-        /// Xử lý thanh toán ngân hàng (giả lập)
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProcessBankPayment(int orderId, string bankCode)
-        {
-            var order = await _orderService.GetOrderByIdAsync(orderId);
-
-            if (order == null)
-            {
-                return NotFound("Không tìm thấy đơn hàng");
-            }
-
-            // Kiểm tra quyền truy cập
-            if (order.UserID != User.GetUserId())
-            {
-                return Forbid();
-            }
-
-            // Validate bank code
-            if (string.IsNullOrEmpty(bankCode) || !BankCodes.AllBanks.Contains(bankCode))
-            {
-                TempData["Error"] = "Vui lòng chọn ngân hàng";
-                return RedirectToAction("BankPayment", new { orderId });
-            }
-
-            // Cập nhật trạng thái thanh toán
-            await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
-
-            TempData["PaymentSuccess"] = $"Thanh toán qua {bankCode} thành công!";
-            return RedirectToAction("OrderConfirmation", new { orderId });
-        }
-
-        /// <summary>
-        /// GET: /Checkout/VnPayReturn
-        /// Xử lý callback từ VNPAY
-        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> VnPayReturn()
@@ -210,10 +154,58 @@ namespace Assignment_ASP.NET.Controllers
             return RedirectToAction("OrderConfirmation", new { orderId });
         }
 
-        /// <summary>
-        /// GET: /Checkout/OrderConfirmation
-        /// Hiển thị trang xác nhận đơn hàng
-        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ZaloPayReturn()
+        {
+            var response = _zaloPayService.ProcessCallback(Request.Query);
+
+            if (string.IsNullOrEmpty(response.OrderId) || !int.TryParse(response.OrderId, out int orderId))
+            {
+                TempData["Error"] = "Không tìm thấy thông tin đơn hàng";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (response.Success)
+            {
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
+                TempData["PaymentSuccess"] = "Thanh toán ZaloPay thành công!";
+            }
+            else
+            {
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Failed);
+                TempData["Error"] = $"Thanh toán ZaloPay thất bại. Mã lỗi: {response.Status}";
+            }
+
+            return RedirectToAction("OrderConfirmation", new { orderId });
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> MoMoReturn()
+        {
+            var response = _momoService.ProcessCallback(Request.Query);
+
+            if (!int.TryParse(response.OrderId, out int orderId))
+            {
+                TempData["Error"] = "Không tìm thấy thông tin đơn hàng";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (response.Success)
+            {
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
+                TempData["PaymentSuccess"] = "Thanh toán MoMo thành công!";
+            }
+            else
+            {
+                await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Failed);
+                TempData["Error"] = $"Thanh toán MoMo thất bại. Mã lỗi: {response.ResultCode}";
+            }
+
+            return RedirectToAction("OrderConfirmation", new { orderId });
+        }
+
         [HttpGet]
         public async Task<IActionResult> OrderConfirmation(int? orderId)
         {
@@ -221,7 +213,6 @@ namespace Assignment_ASP.NET.Controllers
 
             if (orderId == null)
             {
-                // Lấy đơn hàng mới nhất của user
                 var orders = await _orderService.GetOrdersByUserIdAsync(User.GetUserId());
                 order = orders.FirstOrDefault();
             }
@@ -235,7 +226,6 @@ namespace Assignment_ASP.NET.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // Kiểm tra quyền truy cập
             if (order.UserID != User.GetUserId())
             {
                 return Forbid();
