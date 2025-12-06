@@ -23,8 +23,6 @@ namespace Assignment_ASP.NET.Services
 
         public string CreatePaymentUrl(HttpContext context, Order order)
         {
-            var tick = DateTime.Now.Ticks.ToString();
-            
             var vnpay = new VnPayLibrary();
             vnpay.AddRequestData("vnp_Version", _config["VnPay:Version"]);
             vnpay.AddRequestData("vnp_Command", _config["VnPay:Command"]);
@@ -37,7 +35,7 @@ namespace Assignment_ASP.NET.Services
             vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan don hang {order.OrderID}");
             vnpay.AddRequestData("vnp_OrderType", "other");
             vnpay.AddRequestData("vnp_ReturnUrl", _config["VnPay:ReturnUrl"]);
-            vnpay.AddRequestData("vnp_TxnRef", tick);
+            vnpay.AddRequestData("vnp_TxnRef", order.OrderID.ToString());
 
             var paymentUrl = vnpay.CreateRequestUrl(_config["VnPay:Url"], _config["VnPay:HashSecret"]);
             
