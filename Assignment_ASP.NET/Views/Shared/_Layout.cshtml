@@ -17,9 +17,6 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            zoom: 0.67;
-            -moz-transform: scale(0.67);
-            -moz-transform-origin: 0 0;
         }
         
         .card-hover:hover {
@@ -58,7 +55,7 @@
                 
                 <!-- Logo -->
                 <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-3 group">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-700">
+                    <div class="w-10 h-10 bg-indigo-600 flex items-center justify-center group-hover:bg-indigo-700">
                         <i class="bi bi-shop text-white text-lg"></i>
                     </div>
                     <div class="hidden md:block">
@@ -74,10 +71,10 @@
                             type="search" 
                             name="searchString" 
                             placeholder="Tìm kiếm sản phẩm..."
-                            class="w-full px-5 py-2.5 pl-11 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:bg-white text-sm"
+                            class="w-full px-5 py-2.5 pl-11 bg-slate-50 border border-slate-200 focus:outline-none focus:border-indigo-400 focus:bg-white text-sm"
                         />
                         <i class="bi bi-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <button type="submit" class="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-5 py-1.5 rounded-md hover:bg-indigo-700 text-sm">
+                        <button type="submit" class="absolute right-1.5 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-5 py-1.5 hover:bg-indigo-700 text-sm">
                             Tìm
                         </button>
                     </div>
@@ -88,7 +85,7 @@
                     @if (User.Identity.IsAuthenticated && User.IsInRole("Customer"))
                     {
                         <a asp-controller="Cart" asp-action="Index" class="relative">
-                            <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center hover:bg-slate-200">
+                            <div class="w-10 h-10 bg-slate-100 flex items-center justify-center hover:bg-slate-200">
                                 <i class="bi bi-cart text-slate-700 text-lg"></i>
                             </div>
                             <span class="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">@await Component.InvokeAsync("CartCount")</span>
@@ -191,7 +188,7 @@
                 
                 <div>
                     <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <div class="w-8 h-8 bg-indigo-600 flex items-center justify-center">
                             <i class="bi bi-shop text-white"></i>
                         </div>
                         <h3 class="font-bold">Web Bán Hàng</h3>
@@ -218,10 +215,10 @@
                 <div>
                     <h3 class="font-semibold mb-3">Theo dõi</h3>
                     <div class="flex space-x-2">
-                        <a href="#" class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 text-sm">
+                        <a href="#" class="w-8 h-8 bg-slate-800 flex items-center justify-center hover:bg-indigo-600 text-sm">
                             <i class="bi bi-facebook"></i>
                         </a>
-                        <a href="#" class="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 text-sm">
+                        <a href="#" class="w-8 h-8 bg-slate-800 flex items-center justify-center hover:bg-indigo-600 text-sm">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>

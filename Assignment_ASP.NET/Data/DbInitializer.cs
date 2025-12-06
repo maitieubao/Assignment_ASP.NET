@@ -10,12 +10,18 @@ namespace Assignment_ASP.NET.Data
         {
             context.Database.EnsureCreated();
 
-            // Look for any products.
-            if (context.Products.Count() > 20) // If we have more than the initial seed, assume populated
+            // Clean up auto-generated products with placeholder images
+            var placeholderProducts = context.Products
+                .Where(p => p.ImageUrl != null && p.ImageUrl.Contains("placehold.co"))
+                .ToList();
+            
+            if (placeholderProducts.Any())
             {
-                return;   // DB has been seeded
+                context.Products.RemoveRange(placeholderProducts);
+                context.SaveChanges();
             }
 
+            // Seed categories if not exist
             var categories = new Category[]
             {
                 new Category { CategoryName = "Laptop" },
@@ -32,7 +38,6 @@ namespace Assignment_ASP.NET.Data
 
             foreach (Category c in categories)
             {
-                // Check if category exists to avoid duplicates if partial seed exists
                 if (!context.Categories.Any(x => x.CategoryName == c.CategoryName))
                 {
                     context.Categories.Add(c);
@@ -43,42 +48,167 @@ namespace Assignment_ASP.NET.Data
             // Reload categories to get IDs
             var allCategories = context.Categories.ToList();
 
-            var products = new List<Product>();
-            var random = new Random();
-            string[] colors = { "Black", "White", "Silver", "Gold", "Blue", "Red", "Green", "Rose Gold", "Space Gray", "Midnight" };
-            string[] sizes = { "Standard", "Large", "Small", "Medium", "XL" };
-            string[] manufacturers = { "Vietnam", "China", "Taiwan", "Korea", "Japan", "USA", "Germany" };
-            string[] warranties = { "12 tháng", "24 tháng", "36 tháng", "6 tháng" };
-
-            for (int i = 1; i <= 300; i++)
+            // Only seed products if there are very few or none
+            if (context.Products.Count() < 5)
             {
-                var category = allCategories[random.Next(allCategories.Count)];
-                var productName = $"{category.CategoryName} Model {random.Next(1000, 9999)}";
-                
-                // Generate detailed specifications based on category
-                string keyFeatures = GenerateKeyFeatures(category.CategoryName, random);
-                string specifications = GenerateSpecifications(category.CategoryName, random);
-                
-                products.Add(new Product
+                // Add quality sample products with real images
+                var sampleProducts = new List<Product>
                 {
-                    ProductName = productName,
-                    Description = $"Sản phẩm {category.CategoryName} cao cấp với thiết kế hiện đại, tính năng vượt trội. Phù hợp cho mọi nhu cầu sử dụng từ cơ bản đến chuyên nghiệp.",
-                    Price = random.Next(100, 5000) * 10000, // 1,000,000 to 50,000,000
-                    ImageUrl = $"https://placehold.co/600x400?text={Uri.EscapeDataString(productName)}",
-                    Color = colors[random.Next(colors.Length)],
-                    Size = sizes[random.Next(sizes.Length)],
-                    StockQuantity = random.Next(1, 100),
-                    CategoryID = category.CategoryID,
-                    Manufacturer = manufacturers[random.Next(manufacturers.Length)],
-                    WarrantyPeriod = warranties[random.Next(warranties.Length)],
-                    KeyFeatures = keyFeatures,
-                    Specifications = specifications
-                });
+                    new Product
+                    {
+                        ProductName = "MacBook Pro 14 inch M3",
+                        Description = "Laptop cao cấp với chip Apple M3, màn hình Liquid Retina XDR 14 inch, hiệu năng mạnh mẽ cho công việc chuyên nghiệp.",
+                        Price = 49990000,
+                        ImageUrl = "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mbp14-spacegray-select-202310?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1697230830200",
+                        Color = "Space Gray",
+                        Size = "14 inch",
+                        StockQuantity = 15,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Laptop").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Chip Apple M3|RAM 18GB|SSD 512GB|Màn hình Liquid Retina XDR",
+                        Specifications = "CPU:Apple M3 8-core|RAM:18GB Unified|Ổ cứng:SSD 512GB|Màn hình:14.2 inch 3024x1964|Pin:Lên đến 17 giờ|Trọng lượng:1.55 kg"
+                    },
+                    new Product
+                    {
+                        ProductName = "iPhone 15 Pro Max 256GB",
+                        Description = "Điện thoại flagship với chip A17 Pro, camera 48MP, khung Titanium cao cấp, hỗ trợ USB-C.",
+                        Price = 34990000,
+                        ImageUrl = "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-max-black-titanium-select?wid=940&hei=1112&fmt=png-alpha&.v=1692846357018",
+                        Color = "Black Titanium",
+                        Size = "6.7 inch",
+                        StockQuantity = 25,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Tablet").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Chip A17 Pro|Camera 48MP|Titanium Design|USB-C",
+                        Specifications = "CPU:A17 Pro 6-core|RAM:8GB|Bộ nhớ:256GB|Màn hình:6.7 inch Super Retina XDR|Pin:4422 mAh|Trọng lượng:221g"
+                    },
+                    new Product
+                    {
+                        ProductName = "Apple Watch Ultra 2",
+                        Description = "Đồng hồ thông minh cao cấp với vỏ Titanium, GPS + Cellular, chống nước 100m, pin 36 giờ.",
+                        Price = 21990000,
+                        ImageUrl = "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/watch-ultra-2-702702?wid=940&hei=1112&fmt=png-alpha&.v=1693527297631",
+                        Color = "Titanium",
+                        Size = "49mm",
+                        StockQuantity = 10,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Smartwatch").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Vỏ Titanium|GPS + Cellular|Chống nước 100m|Pin 36 giờ",
+                        Specifications = "Màn hình:1.92 inch OLED|Kết nối:Bluetooth 5.3, WiFi, GPS|Pin:542 mAh|Chống nước:100m WR|Trọng lượng:61.3g"
+                    },
+                    new Product
+                    {
+                        ProductName = "Sony Alpha A7 IV",
+                        Description = "Máy ảnh mirrorless full-frame 33MP, quay video 4K 60fps, lấy nét tự động AI tiên tiến.",
+                        Price = 58990000,
+                        ImageUrl = "https://www.sony.com.vn/image/5d02da5df552836db894cead8a68f5f3?fmt=pjpeg&wid=660&bgcolor=FFFFFF&bgc=FFFFFF",
+                        Color = "Black",
+                        Size = "Full-frame",
+                        StockQuantity = 8,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Camera").CategoryID,
+                        Manufacturer = "Japan",
+                        WarrantyPeriod = "24 tháng",
+                        KeyFeatures = "Cảm biến 33MP Full-frame|Video 4K 60fps|AI AF|5-axis IBIS",
+                        Specifications = "Cảm biến:33MP Full-frame Exmor R|Ống kính:Sony E-mount|Video:4K 60fps / 1080p 120fps|ISO:100-51200|Trọng lượng:658g"
+                    },
+                    new Product
+                    {
+                        ProductName = "Sony WH-1000XM5",
+                        Description = "Tai nghe over-ear cao cấp với chống ồn chủ động hàng đầu, âm thanh Hi-Res, pin 30 giờ.",
+                        Price = 8490000,
+                        ImageUrl = "https://www.sony.com.vn/image/8d9a2d323e7ad35a88ec58efde4ab371?fmt=pjpeg&wid=660&bgcolor=FFFFFF&bgc=FFFFFF",
+                        Color = "Black",
+                        Size = "Over-ear",
+                        StockQuantity = 30,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Headphone").CategoryID,
+                        Manufacturer = "Japan",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Chống ồn ANC tốt nhất|Hi-Res Audio|Pin 30 giờ|Multipoint",
+                        Specifications = "Driver:30mm|Trở kháng:48 Ohm|Đáp ứng tần số:4-40000 Hz|Pin:30 giờ|Kết nối:Bluetooth 5.2, AUX|Trọng lượng:250g"
+                    },
+                    new Product
+                    {
+                        ProductName = "JBL Flip 6",
+                        Description = "Loa Bluetooth di động chống nước IP67, âm bass mạnh mẽ, pin 12 giờ, kết nối PartyBoost.",
+                        Price = 2990000,
+                        ImageUrl = "https://www.jbl.com.vn/dw/image/v2/AAUJ_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw5c79ccdb/JBL_FLIP6_HERO_BLACK_0609.png?sw=537&sfrm=png",
+                        Color = "Black",
+                        Size = "Portable",
+                        StockQuantity = 50,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Speaker").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Chống nước IP67|Pin 12 giờ|PartyBoost|JBL Pro Sound",
+                        Specifications = "Công suất:30W|Đáp ứng tần số:63-20000 Hz|Pin:4800 mAh|Kết nối:Bluetooth 5.1|Chống nước:IP67|Trọng lượng:550g"
+                    },
+                    new Product
+                    {
+                        ProductName = "Logitech G Pro X Superlight 2",
+                        Description = "Chuột gaming không dây siêu nhẹ 60g, cảm biến HERO 2, polling rate 2000Hz, pin 95 giờ.",
+                        Price = 3690000,
+                        ImageUrl = "https://resource.logitechg.com/w_692,c_lpad,ar_4:3,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/gaming/en/products/pro-x2-lightspeed/gallery/pro-x2-lightspeed-gallery-1-black.png?v=1",
+                        Color = "Black",
+                        Size = "Standard",
+                        StockQuantity = 40,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Mouse").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "24 tháng",
+                        KeyFeatures = "Siêu nhẹ 60g|HERO 2 Sensor|2000Hz Polling|Pin 95 giờ",
+                        Specifications = "DPI:32000|Số nút:5|Polling rate:2000 Hz|Kết nối:LIGHTSPEED Wireless|Trọng lượng:60g"
+                    },
+                    new Product
+                    {
+                        ProductName = "Keychron Q1 Pro",
+                        Description = "Bàn phím cơ 75% layout, switch Gateron Jupiter, vỏ nhôm CNC, hỗ trợ Bluetooth và QMK/VIA.",
+                        Price = 4990000,
+                        ImageUrl = "https://www.keychron.com/cdn/shop/files/Keychron-Q1-Pro-QMK-VIA-wireless-custom-mechanical-keyboard-75-percent-layout-full-aluminum-grey-frame-for-Mac-Windows-Linux-Gateron-Jupiter-brown-switches_1800x1800.jpg?v=1700120023",
+                        Color = "Space Gray",
+                        Size = "75%",
+                        StockQuantity = 20,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Keyboard").CategoryID,
+                        Manufacturer = "China",
+                        WarrantyPeriod = "12 tháng",
+                        KeyFeatures = "Vỏ nhôm CNC|Gateron Jupiter|Bluetooth + Wired|QMK/VIA",
+                        Specifications = "Loại switch:Gateron Jupiter Brown|Số phím:84|LED:South-facing RGB|Keycap:Double-shot PBT|Kết nối:Bluetooth 5.1, USB-C|Trọng lượng:1.6 kg"
+                    },
+                    new Product
+                    {
+                        ProductName = "LG UltraGear 27GP850-B",
+                        Description = "Màn hình gaming 27 inch QHD 165Hz, Nano IPS 1ms, G-Sync Compatible, HDR400.",
+                        Price = 12990000,
+                        ImageUrl = "https://www.lg.com/vn/images/monitors/md07556988/gallery/desktop-01.jpg",
+                        Color = "Black",
+                        Size = "27 inch",
+                        StockQuantity = 15,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Monitor").CategoryID,
+                        Manufacturer = "Korea",
+                        WarrantyPeriod = "24 tháng",
+                        KeyFeatures = "QHD 165Hz|Nano IPS 1ms|G-Sync Compatible|HDR400",
+                        Specifications = "Kích thước:27 inch|Độ phân giải:2560x1440|Tần số quét:165 Hz|Thời gian phản hồi:1ms|Tấm nền:Nano IPS|Công nghệ:G-Sync, FreeSync Premium"
+                    },
+                    new Product
+                    {
+                        ProductName = "SteelSeries Arctis Nova Pro",
+                        Description = "Tai nghe gaming cao cấp với Active Noise Cancellation, driver Hi-Fi, DAC ngoài kèm theo.",
+                        Price = 8990000,
+                        ImageUrl = "https://media.steelseriescdn.com/thumbs/catalog/items/61527/7f0b2fcb92c0424aa3d556ed03d4f2a7.png.500x400_q100_crop-fit_optimize.png",
+                        Color = "Black",
+                        Size = "Over-ear",
+                        StockQuantity = 12,
+                        CategoryID = allCategories.First(c => c.CategoryName == "Gaming Gear").CategoryID,
+                        Manufacturer = "USA",
+                        WarrantyPeriod = "24 tháng",
+                        KeyFeatures = "Active Noise Cancellation|Hi-Fi Drivers|GameDAC Gen 2|Infinity Battery System",
+                        Specifications = "Driver:40mm Neodymium|Trở kháng:38 Ohm|Đáp ứng tần số:10-40000 Hz|Pin:22 giờ (mỗi pin)|Kết nối:2.4GHz Wireless, Bluetooth, Wired|Trọng lượng:338g"
+                    }
+                };
+
+                context.Products.AddRange(sampleProducts);
+                context.SaveChanges();
             }
-
-
-            context.Products.AddRange(products);
-            context.SaveChanges();
 
             // Add Users
             if (context.Users.Count() < 10)
@@ -89,194 +219,33 @@ namespace Assignment_ASP.NET.Data
 
                 if (customerRole != null)
                 {
-                    var users = new List<User>();
-                    for (int i = 1; i <= 20; i++)
+                    var users = new List<User>
                     {
-                        users.Add(new User
+                        new User
                         {
-                            Username = $"user{i}",
+                            Username = "khachhang1",
                             PasswordHash = passwordHash,
-                            FullName = $"User Number {i}",
-                            Email = $"user{i}@example.com",
-                            Address = $"{i} Random Street, City",
-                            Phone = $"090{random.Next(1000000, 9999999)}",
+                            FullName = "Nguyễn Văn An",
+                            Email = "an.nguyen@email.com",
+                            Address = "123 Nguyễn Huệ, Quận 1, TP.HCM",
+                            Phone = "0901234567",
                             RoleID = customerRole.RoleID
-                        });
-                    }
+                        },
+                        new User
+                        {
+                            Username = "khachhang2",
+                            PasswordHash = passwordHash,
+                            FullName = "Trần Thị Bình",
+                            Email = "binh.tran@email.com",
+                            Address = "456 Lê Lợi, Quận 3, TP.HCM",
+                            Phone = "0907654321",
+                            RoleID = customerRole.RoleID
+                        }
+                    };
                     context.Users.AddRange(users);
                     context.SaveChanges();
                 }
             }
-        }
-
-        private static string GenerateKeyFeatures(string categoryName, Random random)
-        {
-            var features = new List<string>();
-            
-            switch (categoryName)
-            {
-                case "Laptop":
-                    features.Add($"Chip Intel Core i{random.Next(5, 10)} thế hệ {random.Next(10, 14)}");
-                    features.Add($"RAM {random.Next(8, 33)} GB DDR{random.Next(4, 6)}");
-                    features.Add($"SSD {random.Next(256, 1025)} GB NVMe");
-                    features.Add("Màn hình Full HD/4K chống chói");
-                    break;
-                case "Tablet":
-                    features.Add($"Màn hình {random.Next(8, 13)} inch Retina/AMOLED");
-                    features.Add($"Chip {(random.Next(2) == 0 ? "Apple M" + random.Next(1, 3) : "Snapdragon " + random.Next(800, 900))}");
-                    features.Add("Hỗ trợ bút cảm ứng");
-                    features.Add($"Pin {random.Next(6000, 10000)} mAh");
-                    break;
-                case "Smartwatch":
-                    features.Add("Theo dõi sức khỏe 24/7");
-                    features.Add("Chống nước IP68/5ATM");
-                    features.Add("GPS tích hợp");
-                    features.Add($"Pin {random.Next(2, 8)} ngày");
-                    break;
-                case "Camera":
-                    features.Add($"Cảm biến {random.Next(20, 61)} MP");
-                    features.Add("Quay video 4K/8K");
-                    features.Add("Chống rung quang học");
-                    features.Add("Kết nối WiFi/Bluetooth");
-                    break;
-                case "Headphone":
-                    features.Add("Chống ồn chủ động ANC");
-                    features.Add("Driver {random.Next(30, 51)} mm");
-                    features.Add($"Pin {random.Next(20, 41)} giờ");
-                    features.Add("Kết nối Bluetooth 5.0+");
-                    break;
-                case "Speaker":
-                    features.Add($"Công suất {random.Next(10, 101)} W");
-                    features.Add("Chống nước IPX7");
-                    features.Add("Kết nối đa thiết bị");
-                    features.Add($"Pin {random.Next(8, 25)} giờ");
-                    break;
-                case "Mouse":
-                    features.Add($"DPI {random.Next(1000, 16001)}");
-                    features.Add("Cảm biến quang học chính xác");
-                    features.Add("Thiết kế ergonomic");
-                    features.Add("Kết nối không dây/có dây");
-                    break;
-                case "Keyboard":
-                    features.Add("Switch cơ học Cherry MX/Gateron");
-                    features.Add("LED RGB 16.8 triệu màu");
-                    features.Add("Keycap PBT Double-shot");
-                    features.Add("Kết nối USB-C/Wireless");
-                    break;
-                case "Monitor":
-                    features.Add($"Màn hình {random.Next(24, 35)} inch {(random.Next(2) == 0 ? "Full HD" : "4K")}");
-                    features.Add($"Tần số quét {random.Next(60, 241)} Hz");
-                    features.Add("Công nghệ IPS/VA/TN");
-                    features.Add("HDR10, FreeSync/G-Sync");
-                    break;
-                case "Gaming Gear":
-                    features.Add("Thiết kế gaming chuyên nghiệp");
-                    features.Add("LED RGB tùy chỉnh");
-                    features.Add("Phản hồi nhanh < 1ms");
-                    features.Add("Tương thích đa nền tảng");
-                    break;
-                default:
-                    features.Add("Chất lượng cao cấp");
-                    features.Add("Thiết kế hiện đại");
-                    features.Add("Bền bỉ theo thời gian");
-                    features.Add("Dễ dàng sử dụng");
-                    break;
-            }
-            
-            return string.Join("|", features);
-        }
-
-        private static string GenerateSpecifications(string categoryName, Random random)
-        {
-            var specs = new List<string>();
-            
-            switch (categoryName)
-            {
-                case "Laptop":
-                    specs.Add($"CPU:Intel Core i{random.Next(5, 10)} Gen {random.Next(10, 14)}");
-                    specs.Add($"RAM:{random.Next(8, 33)} GB DDR{random.Next(4, 6)}");
-                    specs.Add($"Ổ cứng:SSD {random.Next(256, 1025)} GB NVMe");
-                    specs.Add($"Màn hình:{random.Next(13, 17)} inch Full HD/4K");
-                    specs.Add($"Card đồ họa:{(random.Next(2) == 0 ? "Intel Iris Xe" : "NVIDIA RTX " + random.Next(3050, 4090))}");
-                    specs.Add($"Trọng lượng:{random.Next(12, 25) / 10.0} kg");
-                    break;
-                case "Tablet":
-                    specs.Add($"Màn hình:{random.Next(8, 13)} inch, {random.Next(1920, 2732)}x{random.Next(1080, 2048)} pixels");
-                    specs.Add($"Chip:{(random.Next(2) == 0 ? "Apple M" + random.Next(1, 3) : "Snapdragon " + random.Next(800, 900))}");
-                    specs.Add($"RAM:{random.Next(4, 17)} GB");
-                    specs.Add($"Bộ nhớ:{random.Next(64, 513)} GB");
-                    specs.Add($"Pin:{random.Next(6000, 10000)} mAh");
-                    specs.Add($"Trọng lượng:{random.Next(300, 700)} g");
-                    break;
-                case "Smartwatch":
-                    specs.Add($"Màn hình:{random.Next(1, 3)}.{random.Next(1, 10)} inch AMOLED");
-                    specs.Add("Kết nối:Bluetooth 5.0, WiFi, GPS");
-                    specs.Add($"Pin:{random.Next(200, 500)} mAh");
-                    specs.Add("Chống nước:IP68/5ATM");
-                    specs.Add($"Trọng lượng:{random.Next(30, 60)} g");
-                    break;
-                case "Camera":
-                    specs.Add($"Cảm biến:{random.Next(20, 61)} MP {(random.Next(2) == 0 ? "Full-frame" : "APS-C")}");
-                    specs.Add($"Ống kính:{random.Next(18, 71)}-{random.Next(100, 301)}mm f/{random.Next(18, 56) / 10.0}");
-                    specs.Add($"Video:4K {random.Next(30, 121)}fps / 8K {random.Next(24, 61)}fps");
-                    specs.Add("ISO:{random.Next(100, 51201)}");
-                    specs.Add($"Trọng lượng:{random.Next(400, 1200)} g");
-                    break;
-                case "Headphone":
-                    specs.Add($"Driver:{random.Next(30, 51)} mm");
-                    specs.Add($"Trở kháng:{random.Next(16, 65)} Ohm");
-                    specs.Add($"Đáp ứng tần số:{random.Next(15, 21)}-{random.Next(20000, 40001)} Hz");
-                    specs.Add($"Pin:{random.Next(20, 41)} giờ");
-                    specs.Add("Kết nối:Bluetooth 5.0+, AUX 3.5mm");
-                    specs.Add($"Trọng lượng:{random.Next(200, 350)} g");
-                    break;
-                case "Speaker":
-                    specs.Add($"Công suất:{random.Next(10, 101)} W");
-                    specs.Add($"Đáp ứng tần số:{random.Next(40, 81)}-{random.Next(18000, 20001)} Hz");
-                    specs.Add($"Pin:{random.Next(2000, 5001)} mAh");
-                    specs.Add("Kết nối:Bluetooth 5.0, AUX, USB");
-                    specs.Add("Chống nước:IPX7");
-                    specs.Add($"Trọng lượng:{random.Next(500, 2000)} g");
-                    break;
-                case "Mouse":
-                    specs.Add($"DPI:{random.Next(1000, 16001)}");
-                    specs.Add($"Số nút:{random.Next(3, 13)}");
-                    specs.Add($"Polling rate:{random.Next(125, 1001)} Hz");
-                    specs.Add("Kết nối:USB/Wireless 2.4GHz/Bluetooth");
-                    specs.Add($"Trọng lượng:{random.Next(60, 130)} g");
-                    break;
-                case "Keyboard":
-                    specs.Add($"Loại switch:{(random.Next(3) == 0 ? "Cherry MX Red" : random.Next(2) == 0 ? "Gateron Brown" : "Kailh Blue")}");
-                    specs.Add($"Số phím:{(random.Next(2) == 0 ? "104" : random.Next(2) == 0 ? "87" : "61")}");
-                    specs.Add("LED:RGB 16.8 triệu màu");
-                    specs.Add("Keycap:PBT Double-shot");
-                    specs.Add("Kết nối:USB-C/Wireless");
-                    specs.Add($"Trọng lượng:{random.Next(600, 1200)} g");
-                    break;
-                case "Monitor":
-                    specs.Add($"Kích thước:{random.Next(24, 35)} inch");
-                    specs.Add($"Độ phân giải:{(random.Next(2) == 0 ? "1920x1080" : "3840x2160")}");
-                    specs.Add($"Tần số quét:{random.Next(60, 241)} Hz");
-                    specs.Add($"Thời gian phản hồi:{random.Next(1, 6)} ms");
-                    specs.Add($"Tấm nền:{(random.Next(3) == 0 ? "IPS" : random.Next(2) == 0 ? "VA" : "TN")}");
-                    specs.Add("Công nghệ:HDR10, FreeSync/G-Sync");
-                    break;
-                case "Gaming Gear":
-                    specs.Add("Thiết kế:Ergonomic, Gaming");
-                    specs.Add("LED:RGB tùy chỉnh");
-                    specs.Add("Phản hồi:< 1ms");
-                    specs.Add("Tương thích:PC, Console, Mobile");
-                    specs.Add($"Trọng lượng:{random.Next(100, 500)} g");
-                    break;
-                default:
-                    specs.Add("Chất liệu:Cao cấp");
-                    specs.Add("Kích thước:Tiêu chuẩn");
-                    specs.Add("Màu sắc:Đa dạng");
-                    specs.Add("Bảo hành:Chính hãng");
-                    break;
-            }
-            
-            return string.Join("|", specs);
         }
     }
 }

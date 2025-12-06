@@ -4,7 +4,7 @@
 }
 
 <!-- Banner Carousel -->
-<div class="relative w-full mb-6 overflow-hidden rounded-2xl" id="bannerCarousel">
+<div class="relative w-full mb-6 overflow-hidden" id="bannerCarousel">
     <div class="relative h-[400px] md:h-[500px]">
         <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
             <img src="~/images/iphone_banner.png" alt="iPhone" class="w-full h-full object-cover">
@@ -23,10 +23,10 @@
         </div>
     </div>
 
-    <button onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-3 shadow-lg z-10">
+    <button onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 p-3 shadow-lg z-10">
         <i class="bi bi-chevron-left text-2xl"></i>
     </button>
-    <button onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-3 shadow-lg z-10">
+    <button onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 p-3 shadow-lg z-10">
         <i class="bi bi-chevron-right text-2xl"></i>
     </button>
 
@@ -35,22 +35,22 @@
 
 <!-- Service Features -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+    <div class="bg-white border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 bg-blue-100 flex items-center justify-center mb-4">
             <i class="bi bi-truck text-blue-600 text-xl"></i>
         </div>
         <h3 class="font-semibold text-slate-900 mb-2">Freeship toàn quốc</h3>
         <p class="text-sm text-slate-600">Đơn từ 2.000.000 VNĐ</p>
     </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+    <div class="bg-white border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 bg-green-100 flex items-center justify-center mb-4">
             <i class="bi bi-shield-check text-green-600 text-xl"></i>
         </div>
         <h3 class="font-semibold text-slate-900 mb-2">Bảo hành 12 tháng</h3>
         <p class="text-sm text-slate-600">Đổi trả trong 15 ngày</p>
     </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+    <div class="bg-white border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 bg-orange-100 flex items-center justify-center mb-4">
             <i class="bi bi-headset text-orange-600 text-xl"></i>
         </div>
         <h3 class="font-semibold text-slate-900 mb-2">Hỗ trợ 24/7</h3>
@@ -63,7 +63,7 @@
     
     <!-- Sidebar -->
     <div class="lg:col-span-1">
-        <div class="bg-white rounded-xl border border-slate-200 p-5 sticky top-24">
+        <div class="bg-white border border-slate-200 p-5 sticky top-24">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="font-bold text-slate-900 flex items-center text-sm">
                     <i class="bi bi-tags text-indigo-600 mr-2"></i>DANH MỤC
@@ -72,14 +72,14 @@
             
             <div class="space-y-1">
                 <a asp-action="Index" asp-route-categoryId="" asp-route-searchString="@Model.CurrentSearchString"
-                   class="category-link @(Model.CurrentCategoryId == null ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 rounded-lg text-sm transition-colors mb-3 text-center font-medium">
+                   class="category-link @(Model.CurrentCategoryId == null ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 text-sm transition-colors mb-3 text-center font-medium">
                     <i class="bi bi-grid-3x3-gap mr-1"></i>Tất cả sản phẩm
                 </a>
                 
                 @foreach (var category in Model.Categories)
                 {
                     <a asp-action="Index" asp-route-categoryId="@category.CategoryID" asp-route-searchString="@Model.CurrentSearchString"
-                       class="category-link @(Model.CurrentCategoryId == category.CategoryID ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 rounded-lg text-sm transition-colors text-center">
+                       class="category-link @(Model.CurrentCategoryId == category.CategoryID ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 text-sm transition-colors text-center">
                         @category.CategoryName
                     </a>
                 }
@@ -91,13 +91,13 @@
     <div class="lg:col-span-3">
         @if (!Model.Products.Any())
         {
-            <div class="bg-white rounded-xl border border-slate-200 p-12 text-center">
-                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div class="bg-white border border-slate-200 p-12 text-center">
+                <div class="w-20 h-20 bg-slate-100 flex items-center justify-center mx-auto mb-4">
                     <i class="bi bi-inbox text-slate-400 text-4xl"></i>
                 </div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Không tìm thấy sản phẩm</h3>
                 <p class="text-slate-600 mb-6">Thử tìm kiếm với từ khóa khác</p>
-                <a asp-action="Index" class="inline-block px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700">Xem tất cả</a>
+                <a asp-action="Index" class="inline-block px-6 py-3 bg-indigo-600 text-white font-medium hover:bg-indigo-700">Xem tất cả</a>
             </div>
         }
         else
@@ -128,7 +128,7 @@
                                 <span class="text-slate-500">Đã bán 1.2k</span>
                             </div>
                             <div class="mb-1.5">
-                                <span class="inline-block bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded text-[9px] font-medium">Voucher 50K</span>
+                                <span class="inline-block bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 text-[9px] font-medium">Voucher 50K</span>
                             </div>
                             @if (!User.Identity.IsAuthenticated || User.IsInRole("Customer"))
                             {
@@ -136,7 +136,7 @@
                                     <form asp-controller="Cart" asp-action="Add" method="post">
                                         <input type="hidden" name="productId" value="@product.ProductID" />
                                         <input type="hidden" name="quantity" value="1" />
-                                        <button type="submit" class="w-full px-2 py-1.5 bg-orange-500 text-white font-medium text-[11px] hover:bg-orange-600 transition-colors rounded">
+                                        <button type="submit" class="w-full px-2 py-1.5 bg-orange-500 text-white font-medium text-[11px] hover:bg-orange-600 transition-colors">
                                             <i class="bi bi-cart-plus mr-1"></i>Thêm vào giỏ
                                         </button>
                                     </form>
@@ -162,7 +162,7 @@
                                asp-route-minPrice="@Model.MinPrice"
                                asp-route-maxPrice="@Model.MaxPrice"
                                asp-route-sortOrder="@Model.CurrentSortOrder"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
+                               class="w-8 h-8 flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         }
@@ -179,7 +179,7 @@
                                    asp-route-minPrice="@Model.MinPrice"
                                    asp-route-maxPrice="@Model.MaxPrice"
                                    asp-route-sortOrder="@Model.CurrentSortOrder"
-                                   class="w-8 h-8 flex items-center justify-center rounded-lg border @(i == Model.CurrentPage ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200") transition-colors font-medium text-sm">
+                                   class="w-8 h-8 flex items-center justify-center border @(i == Model.CurrentPage ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200") transition-colors font-medium text-sm">
                                     @i
                                 </a>
                             }
@@ -199,7 +199,7 @@
                                asp-route-minPrice="@Model.MinPrice"
                                asp-route-maxPrice="@Model.MaxPrice"
                                asp-route-sortOrder="@Model.CurrentSortOrder"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
+                               class="w-8 h-8 flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         }
@@ -268,7 +268,7 @@ window.addEventListener('load', function() {
     var dotsContainer = document.getElementById('dotsContainer');
     for(var i = 0; i < totalSlides; i++) {
         var dot = document.createElement('button');
-        dot.className = 'dot w-3 h-3 rounded-full bg-white/50 shadow-lg transition-all';
+        dot.className = 'dot w-3 h-3 bg-white/50 shadow-lg transition-all';
         dot.onclick = (function(index) {
             return function() { jumpToSlide(index); };
         })(i);
