@@ -1,373 +1,153 @@
-# Assignment ASP.NET Tests - Hướng Dẫn
+# Assignment ASP.NET - Unit Tests
 
-## 📁 Cấu Trúc Dự Án
+Dự án test này chứa các unit tests cho dự án **Assignment_ASP.NET**, sử dụng **xUnit**, **Moq**, và **Entity Framework Core In-Memory Database**.
 
-```
-Assignment_ASP.NET.Tests/
-├── Base/
-│   └── ControllerTestBase.cs          # Base class cho tất cả controller tests
-├── Controllers/
-│   ├── AccountControllerTests.cs      # Tests cho Account controller
-│   ├── CartControllerTests.cs         # Tests cho Cart controller
-│   ├── CategoriesControllerTests.cs   # Tests cho Categories controller
-│   ├── CheckoutControllerTests.cs     # Tests cho Checkout controller
-│   ├── HomeControllerTests.cs         # Tests cho Home controller
-│   ├── OrdersControllerTests.cs       # Tests cho Orders controller
-│   ├── ProductsControllerTests.cs     # Tests cho Products controller
-│   ├── RolesControllerTests.cs        # Tests cho Roles controller
-│   └── UsersControllerTests.cs        # Tests cho Users controller
-└── Helpers/
-    ├── SessionHelper.cs               # Helper methods cho Session operations
-    ├── TestConstants.cs               # Tập trung các hằng số test
-    └── TestDataBuilder.cs             # Builder pattern để tạo test data
+## 📋 Tổng quan
 
-```
+Dự án test này kiểm thử **3 controllers đơn giản nhất** trong ứng dụng, mỗi controller có **3 phương thức test** quan trọng:
 
-## 🎯 Các Thành Phần Chính
+### 1. **HomeController** (3 tests)
+Controller này xử lý trang chủ và hiển thị sản phẩm.
 
-### 1. ControllerTestBase (Base Class)
+- ✅ **Index_ReturnsViewResult_WithHomeIndexViewModel**
+  - Kiểm tra action `Index` trả về view với danh sách sản phẩm và categories
+  - Sử dụng Mock để giả lập `IProductService`
 
-**Mục đích**: Tránh code lặp lại trong setup/teardown và cung cấp helper methods chung.
+- ✅ **Details_WithValidId_ReturnsViewResult**
+  - Kiểm tra action `Details` với ID hợp lệ trả về thông tin chi tiết sản phẩm
+  - Verify rằng model trả về có đúng ProductID
 
-**Cách sử dụng**:
-```csharp
-public class MyControllerTests : ControllerTestBase
-{
-    private MyController _controller;
-    
-    // Định nghĩa tên database prefix
-    protected override string DatabaseNamePrefix => "TestDatabase_MyController";
-    
-    // Seed data chung cho tất cả tests
-    protected override void SeedCommonData()
-    {
-        SeedCategories();
-        SeedProducts();
-    }
-    
-    // Setup riêng cho controller
-    protected override void AdditionalSetup()
-    {
-        _controller = new MyController(Context);
-    }
-    
-    // Cleanup riêng
-    protected override void AdditionalTearDown()
-    {
-        _controller?.Dispose();
-    }
-}
-```
+- ✅ **Promotions_ReturnsViewResult_WithActiveCoupons**
+  - Kiểm tra action `Promotions` trả về danh sách coupon đang hoạt động
+  - Verify số lượng coupons được trả về
 
-**Helper methods có sẵn**:
-- `SeedRoles()` - Seed default roles
-- `SeedCategories()` - Seed default categories
-- `SeedProducts()` - Seed default products
-- `SeedDefaultUser()` - Seed default user
-- `SeedAdminUser()` - Seed admin user
+### 2. **CategoriesController** (3 tests)
+Controller này quản lý CRUD operations cho Categories.
 
-### 2. TestConstants
+- ✅ **Details_WithValidId_ReturnsViewResult**
+  - Kiểm tra action `Details` với ID hợp lệ trả về thông tin category
+  - Sử dụng In-Memory Database để test
 
-**Mục đích**: Tập trung tất cả các hằng số test ở một nơi, tránh magic values.
+- ✅ **Create_Post_WithValidModel_RedirectsToIndex**
+  - Kiểm tra việc tạo category mới thành công
+  - Verify category được thêm vào database
+  - Kiểm tra redirect đến action Index
 
-**Ví dụ sử dụng**:
-```csharp
-// Thay vì:
-var user = new User { UserID = 1, Username = "testuser" };
+- ✅ **DeleteConfirmed_WithValidId_RedirectsToIndex**
+  - Kiểm tra việc xóa category thành công
+  - Verify category bị xóa khỏi database
+  - Kiểm tra số lượng categories còn lại
 
-// Sử dụng:
-var user = new User 
-{ 
-    UserID = TestConstants.DefaultUserId, 
-    Username = TestConstants.DefaultUsername 
-};
+### 3. **CouponsController** (3 tests)
+Controller này quản lý CRUD operations cho Coupons (mã giảm giá).
+
+- ✅ **Create_Post_WithValidModel_RedirectsToIndex**
+  - Kiểm tra việc tạo coupon mới thành công
+  - Verify coupon được thêm vào database với đúng thông tin
+
+- ✅ **Edit_Post_WithValidModel_RedirectsToIndex**
+  - Kiểm tra việc cập nhật coupon thành công
+  - Verify thông tin coupon được cập nhật đúng trong database
+
+- ✅ **DeleteConfirmed_WithValidId_RedirectsToIndex**
+  - Kiểm tra việc xóa coupon thành công
+  - Verify coupon bị xóa khỏi database
+
+## 🛠️ Công nghệ sử dụng
+
+- **xUnit** - Framework testing chính
+- **Moq** - Library để tạo mock objects (dùng cho HomeController)
+- **Entity Framework Core In-Memory Database** - Database giả lập cho testing (dùng cho Categories và Coupons)
+- **.NET 9.0** - Framework version
+
+## 📦 Packages
+
+```xml
+<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+<PackageReference Include="xunit" Version="2.9.2" />
+<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+<PackageReference Include="Moq" Version="4.20.72" />
+<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
 ```
 
-**Các nhóm constants**:
-- User & Admin constants
-- Role constants
-- Category constants
-- Product constants
-- Controller & Action names
-
-### 3. TestDataBuilder
-
-**Mục đích**: Tạo test data dễ dàng và nhất quán với Builder pattern.
-
-**Ví dụ sử dụng**:
-```csharp
-// Tạo default user
-var user = TestDataBuilder.CreateDefaultUser();
-
-// Tạo admin user
-var admin = TestDataBuilder.CreateAdminUser();
-
-// Tạo custom user
-var customUser = TestDataBuilder.CreateUser(2, "john", "john@test.com", TestConstants.CustomerRoleId);
-
-// Tạo default categories
-var categories = TestDataBuilder.CreateDefaultCategories();
-
-// Tạo default products
-var products = TestDataBuilder.CreateDefaultProducts();
-
-// Tạo cart item
-var cartItem = TestDataBuilder.CreateCartItem(productId: 1, quantity: 2, price: 100m);
-```
-
-### 4. SessionHelper
-
-**Mục đích**: Đơn giản hóa việc làm việc với Session trong tests.
-
-**Ví dụ sử dụng**:
-```csharp
-// Setup empty cart
-SessionHelper.SetupEmptyCart(_mockSession);
-
-// Setup cart với items
-var cartItems = TestDataBuilder.CreateDefaultCartItems();
-SessionHelper.SetupCartWithItems(_mockSession, cartItems);
-
-// Verify cart được set
-SessionHelper.VerifyCartSet(_mockSession, Times.Once());
-
-// Verify cart được remove
-SessionHelper.VerifyCartRemoved(_mockSession, Times.Once());
-
-// Verify cart có số lượng items cụ thể
-SessionHelper.VerifyCartSetWithItemCount(_mockSession, expectedCount: 2);
-
-// Verify cart có quantity cụ thể cho product
-SessionHelper.VerifyCartSetWithQuantity(_mockSession, productId: 1, expectedQuantity: 5);
-```
-
-## 📝 Best Practices
-
-### 1. Tổ Chức Tests với Regions
-
-Sử dụng `#region` để nhóm các tests liên quan:
-
-```csharp
-#region Index Tests
-
-[Test]
-public async Task Index_ReturnsViewResult_WithCategories()
-{
-    // Test implementation
-}
-
-#endregion
-
-#region Create Tests
-
-[Test]
-public async Task Create_Post_ValidCategory_RedirectsToIndex()
-{
-    // Test implementation
-}
-
-#endregion
-```
-
-### 2. Naming Convention
-
-**Test methods**: `MethodName_Scenario_ExpectedResult`
-
-Ví dụ:
-- `Index_ReturnsViewResult_WithCategories`
-- `Create_Post_ValidCategory_RedirectsToIndex`
-- `Delete_RemovesCategory_WhenExists`
-
-### 3. Arrange-Act-Assert Pattern
-
-Luôn sử dụng AAA pattern rõ ràng:
-
-```csharp
-[Test]
-public async Task Create_Post_ValidCategory_RedirectsToIndex()
-{
-    // Arrange
-    var category = new Category { CategoryName = "Tablet" };
-
-    // Act
-    var result = await _controller.Create(category);
-
-    // Assert
-    Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-    Assert.That(Context.Categories.Count(), Is.EqualTo(3));
-}
-```
-
-### 4. Meaningful Assertions
-
-Thêm message cho assertions để dễ debug:
-
-```csharp
-Assert.That(model.Count, Is.EqualTo(2), "Should return 2 categories");
-Assert.That(Context.Orders.Count(), Is.EqualTo(0), "Should not create order when cart is empty");
-```
-
-### 5. Sử dụng Constants
-
-Luôn sử dụng constants thay vì hard-coded values:
-
-```csharp
-// ❌ Không tốt
-var result = await _controller.Details(1);
-Assert.That(redirectResult.ActionName, Is.EqualTo("Index"));
-
-// ✅ Tốt
-var result = await _controller.Details(TestConstants.PhoneCategoryId);
-Assert.That(redirectResult.ActionName, Is.EqualTo(TestConstants.IndexAction));
-```
-
-## 🚀 Chạy Tests
+## 🚀 Cách chạy tests
 
 ### Chạy tất cả tests:
 ```bash
-dotnet test
+dotnet test Assignment_ASP.NET.Tests
+```
+
+### Chạy tests với output chi tiết:
+```bash
+dotnet test Assignment_ASP.NET.Tests --logger "console;verbosity=detailed"
 ```
 
 ### Chạy tests cho một class cụ thể:
 ```bash
+dotnet test --filter "FullyQualifiedName~HomeControllerTests"
 dotnet test --filter "FullyQualifiedName~CategoriesControllerTests"
+dotnet test --filter "FullyQualifiedName~CouponsControllerTests"
 ```
 
-### Chạy một test method cụ thể:
-```bash
-dotnet test --filter "FullyQualifiedName~CategoriesControllerTests.Index_ReturnsViewResult_WithCategories"
+## 📊 Kết quả Test
+
+```
+Test Run Successful.
+Total tests: 9
+     Passed: 9
+     Failed: 0
+   Skipped: 0
+Total time: ~7 seconds
 ```
 
-## 🔧 Thêm Test Mới
+## 🎯 Chiến lược Testing
 
-### Bước 1: Tạo test class kế thừa từ ControllerTestBase
+### 1. **Mock-based Testing (HomeController)**
+- Sử dụng **Moq** để tạo mock `IProductService`
+- Không cần database thực tế
+- Test nhanh và độc lập
+- Phù hợp cho controllers sử dụng services
+
+### 2. **In-Memory Database Testing (Categories & Coupons)**
+- Sử dụng **EF Core In-Memory Database**
+- Mỗi test có database riêng (Guid.NewGuid())
+- Tự động cleanup sau mỗi test (IDisposable)
+- Phù hợp cho CRUD operations
+
+## 📝 Cấu trúc Test
+
+Mỗi test method tuân theo pattern **AAA (Arrange-Act-Assert)**:
 
 ```csharp
-using NUnit.Framework;
-using Assignment_ASP.NET.Controllers;
-using Assignment_ASP.NET.Tests.Base;
-using Assignment_ASP.NET.Tests.Helpers;
-
-namespace Assignment_ASP.NET.Tests.Controllers
+[Fact]
+public async Task TestMethodName()
 {
-    [TestFixture]
-    public class MyControllerTests : ControllerTestBase
-    {
-        private MyController _controller;
-        
-        protected override string DatabaseNamePrefix => "TestDatabase_MyController";
-        
-        protected override void AdditionalSetup()
-        {
-            _controller = new MyController(Context);
-        }
-        
-        protected override void AdditionalTearDown()
-        {
-            _controller?.Dispose();
-        }
-    }
-}
-```
-
-### Bước 2: Thêm test methods
-
-```csharp
-#region Index Tests
-
-[Test]
-public async Task Index_ReturnsViewResult_WithData()
-{
-    // Arrange
-    SeedProducts(); // Sử dụng helper từ base class
+    // Arrange - Chuẩn bị dữ liệu test
+    var testData = new TestData();
     
-    // Act
-    var result = await _controller.Index();
+    // Act - Thực hiện action cần test
+    var result = await _controller.Action(testData);
     
-    // Assert
-    Assert.That(result, Is.InstanceOf<ViewResult>());
-}
-
-#endregion
-```
-
-## 📊 Lợi Ích Của Cấu Trúc Mới
-
-### ✅ Trước Refactoring
-- ❌ Code lặp lại nhiều (setup/teardown giống nhau)
-- ❌ Magic values nằm rải rác
-- ❌ Khó maintain khi thay đổi cấu trúc DB
-- ❌ Khó đọc và hiểu
-- ❌ Mỗi test file ~150-200 dòng
-
-### ✅ Sau Refactoring
-- ✅ Code DRY (Don't Repeat Yourself)
-- ✅ Constants tập trung, dễ thay đổi
-- ✅ Dễ maintain và mở rộng
-- ✅ Rõ ràng, dễ đọc
-- ✅ Mỗi test file ~100-120 dòng
-- ✅ Tái sử dụng code cao
-- ✅ Test data nhất quán
-
-## 🎓 Ví Dụ So Sánh
-
-### Trước:
-```csharp
-[SetUp]
-public void Setup()
-{
-    var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-        .UseInMemoryDatabase(databaseName: "TestDatabase_Categories_" + System.Guid.NewGuid())
-        .Options;
-    _context = new ApplicationDbContext(options);
-    _context.Categories.Add(new Category { CategoryID = 1, CategoryName = "Phone" });
-    _context.Categories.Add(new Category { CategoryID = 2, CategoryName = "Laptop" });
-    _context.SaveChanges();
-    _controller = new CategoriesController(_context);
-}
-
-[Test]
-public async Task Details_ReturnsViewResult_WithCategory()
-{
-    var result = await _controller.Details(1);
-    Assert.That(result, Is.InstanceOf<ViewResult>());
-    var viewResult = result as ViewResult;
-    var model = viewResult.Model as Category;
-    Assert.That(model.CategoryID, Is.EqualTo(1));
+    // Assert - Kiểm tra kết quả
+    Assert.IsType<ExpectedType>(result);
 }
 ```
 
-### Sau:
-```csharp
-protected override string DatabaseNamePrefix => "TestDatabase_Categories";
+## 🔍 Lưu ý
 
-protected override void SeedCommonData()
-{
-    SeedCategories(); // Một dòng thay vì nhiều dòng
-}
+1. **In-Memory Database** được tạo mới cho mỗi test class instance
+2. **Seed data** được thêm vào trong constructor của test class
+3. **Dispose** được gọi tự động sau mỗi test để cleanup
+4. Tests hoàn toàn **độc lập** và có thể chạy song song
 
-protected override void AdditionalSetup()
-{
-    _controller = new CategoriesController(Context);
-}
+## 👨‍💻 Tác giả
 
-[Test]
-public async Task Details_ReturnsViewResult_WithCategory()
-{
-    // Act
-    var result = await _controller.Details(TestConstants.PhoneCategoryId);
+Dự án test được tạo để kiểm thử các chức năng cơ bản của Assignment ASP.NET.
 
-    // Assert
-    Assert.That(result, Is.InstanceOf<ViewResult>());
-    var viewResult = result as ViewResult;
-    var model = viewResult.Model as Category;
-    Assert.That(model.CategoryID, Is.EqualTo(TestConstants.PhoneCategoryId));
-    Assert.That(model.CategoryName, Is.EqualTo(TestConstants.PhoneCategoryName));
-}
-```
+---
 
-## 📚 Tài Liệu Tham Khảo
-
-- [NUnit Documentation](https://docs.nunit.org/)
-- [Moq Documentation](https://github.com/moq/moq4)
-- [Unit Testing Best Practices](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
+**Lưu ý**: Đây là phiên bản rút gọn với 3 tests cho mỗi controller. Có thể mở rộng thêm các test cases khác như:
+- Validation tests
+- Error handling tests
+- Edge cases tests
+- Integration tests

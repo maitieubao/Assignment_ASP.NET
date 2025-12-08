@@ -3,207 +3,179 @@
     ViewData["Title"] = "Trang chủ";
 }
 
-<!-- Banner Carousel -->
-<div class="relative w-full mb-6 overflow-hidden rounded-2xl" id="bannerCarousel">
-    <div class="relative h-[400px] md:h-[500px]">
-        <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
-            <img src="~/images/iphone_banner.png" alt="iPhone" class="w-full h-full object-cover">
-        </div>
-        <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
-            <img src="~/images/samsung_banner.png" alt="Samsung" class="w-full h-full object-cover">
-        </div>
-        <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
-            <img src="~/images/vivo_banner.png" alt="Vivo" class="w-full h-full object-cover">
-        </div>
-        <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
-            <img src="~/images/realme_banner.png" alt="Realme" class="w-full h-full object-cover">
-        </div>
-        <div class="banner-slide absolute inset-0 opacity-0 transition-opacity duration-500">
-            <img src="~/images/motorola_banner.png" alt="Motorola" class="w-full h-full object-cover">
-        </div>
-    </div>
-
-    <button onclick="moveSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-3 shadow-lg z-10">
-        <i class="bi bi-chevron-left text-2xl"></i>
-    </button>
-    <button onclick="moveSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-slate-800 rounded-full p-3 shadow-lg z-10">
-        <i class="bi bi-chevron-right text-2xl"></i>
-    </button>
-
-    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10" id="dotsContainer"></div>
-</div>
-
-<!-- Service Features -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-            <i class="bi bi-truck text-blue-600 text-xl"></i>
-        </div>
-        <h3 class="font-semibold text-slate-900 mb-2">Freeship toàn quốc</h3>
-        <p class="text-sm text-slate-600">Đơn từ 2.000.000 VNĐ</p>
-    </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-            <i class="bi bi-shield-check text-green-600 text-xl"></i>
-        </div>
-        <h3 class="font-semibold text-slate-900 mb-2">Bảo hành 12 tháng</h3>
-        <p class="text-sm text-slate-600">Đổi trả trong 15 ngày</p>
-    </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-            <i class="bi bi-headset text-orange-600 text-xl"></i>
-        </div>
-        <h3 class="font-semibold text-slate-900 mb-2">Hỗ trợ 24/7</h3>
-        <p class="text-sm text-slate-600">Kể cả ngày lễ</p>
-    </div>
-</div>
-
-<!-- Main Content -->
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6" id="products">
+<div class="bg-[#F5F5F7] min-h-screen font-sans text-[#1d1d1f]">
     
-    <!-- Sidebar -->
-    <div class="lg:col-span-1">
-        <div class="bg-white rounded-xl border border-slate-200 p-5 sticky top-24">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="font-bold text-slate-900 flex items-center text-sm">
-                    <i class="bi bi-tags text-indigo-600 mr-2"></i>DANH MỤC
-                </h2>
+    <!-- 1. HERO SECTION: Full Width & Cinematic -->
+    <div class="relative w-full h-[60vh] md:h-[70vh] overflow-hidden bg-black text-white mb-12" id="heroBanner">
+        <!-- Slides -->
+        <div class="relative w-full h-full">
+            <div class="hero-slide absolute inset-0 transition-opacity duration-1000 opacity-100">
+                <img src="~/images/iphone_banner.png" class="w-full h-full object-cover opacity-80" alt="Banner 1">
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-6">
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight mb-4">Công nghệ Tương lai</h2>
+                    <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl">Trải nghiệm sức mạnh đột phá trong tầm tay bạn.</p>
+                    <button onclick="scrollToProducts()" class="px-8 py-3 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-colors">
+                        Khám phá ngay
+                    </button>
+                </div>
+            </div>
+            <!-- Bạn có thể thêm các slide khác tương tự ở đây với opacity-0 -->
+        </div>
+        
+        <!-- Simple Dots (No Icons) -->
+        <div class="absolute bottom-8 left-0 right-0 flex justify-center gap-4 z-20">
+            <button class="w-12 h-1 bg-white rounded-full opacity-100"></button>
+            <button class="w-12 h-1 bg-white rounded-full opacity-30 hover:opacity-100 transition-opacity"></button>
+        </div>
+    </div>
+
+    <!-- 2. CATEGORY NAVIGATION: Horizontal Sticky Bar (Thay thế Sidebar) -->
+    <div class="sticky top-0 z-40 bg-[#F5F5F7]/90 backdrop-blur-md border-b border-gray-200 py-4 mb-10 transition-all duration-300" id="categoryNav">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between gap-4">
+                <span class="font-bold text-lg hidden md:block mr-6">DANH MỤC</span>
+                
+                <!-- Scrollable List -->
+                <div class="flex-1 overflow-x-auto no-scrollbar">
+                    <div class="flex gap-2 md:gap-4 whitespace-nowrap">
+                        <a asp-action="Index" asp-route-categoryId="" 
+                           class="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 border 
+                           @(Model.CurrentCategoryId == null ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black")">
+                            Tất cả
+                        </a>
+
+                        @foreach (var category in Model.Categories)
+                        {
+                            <a asp-action="Index" asp-route-categoryId="@category.CategoryID" 
+                               class="px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 border
+                               @(Model.CurrentCategoryId == category.CategoryID ? "bg-black text-white border-black" : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black")">
+                                @category.CategoryName
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MAIN CONTENT -->
+    <div class="container mx-auto px-6 pb-20" id="productList">
+        
+        <!-- Filter Info -->
+        <div class="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 border-b border-gray-300 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight mb-2">Sản phẩm mới</h1>
+                <p class="text-gray-500 text-sm">Hiển thị @Model.Products.Count() kết quả</p>
             </div>
             
-            <div class="space-y-1">
-                <a asp-action="Index" asp-route-categoryId="" asp-route-searchString="@Model.CurrentSearchString"
-                   class="category-link @(Model.CurrentCategoryId == null ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 rounded-lg text-sm transition-colors mb-3 text-center font-medium">
-                    <i class="bi bi-grid-3x3-gap mr-1"></i>Tất cả sản phẩm
-                </a>
-                
-                @foreach (var category in Model.Categories)
-                {
-                    <a asp-action="Index" asp-route-categoryId="@category.CategoryID" asp-route-searchString="@Model.CurrentSearchString"
-                       class="category-link @(Model.CurrentCategoryId == category.CategoryID ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200") block px-3 py-2.5 rounded-lg text-sm transition-colors text-center">
-                        @category.CategoryName
-                    </a>
-                }
+            <!-- Sort dropdown (Minimal text) -->
+            <div class="mt-4 md:mt-0 relative group">
+                <select onchange="location = this.value;" class="appearance-none bg-transparent pl-0 pr-8 py-2 font-semibold text-right cursor-pointer focus:outline-none border-b border-transparent hover:border-black transition-colors">
+                    <option value="@Url.Action("Index", new { sortOrder = "default" })">Sắp xếp: Mặc định</option>
+                    <option value="@Url.Action("Index", new { sortOrder = "price_asc" })">Giá: Thấp đến Cao</option>
+                    <option value="@Url.Action("Index", new { sortOrder = "price_desc" })">Giá: Cao đến Thấp</option>
+                </select>
             </div>
         </div>
-    </div>
 
-    <!-- Products Grid -->
-    <div class="lg:col-span-3">
         @if (!Model.Products.Any())
         {
-            <div class="bg-white rounded-xl border border-slate-200 p-12 text-center">
-                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="bi bi-inbox text-slate-400 text-4xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Không tìm thấy sản phẩm</h3>
-                <p class="text-slate-600 mb-6">Thử tìm kiếm với từ khóa khác</p>
-                <a asp-action="Index" class="inline-block px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700">Xem tất cả</a>
+            <div class="py-20 text-center">
+                <h3 class="text-2xl font-bold text-gray-300 mb-4">KHÔNG TÌM THẤY DỮ LIỆU</h3>
+                <a asp-action="Index" class="text-blue-600 hover:underline">Quay lại trang chủ</a>
             </div>
         }
         else
         {
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <!-- GRID LAYOUT: Clean, Spacious -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
                 @foreach (var product in Model.Products)
                 {
-                    <div class="bg-white border border-slate-200 overflow-hidden hover:border-orange-500 hover:shadow-lg transition-all duration-200 group">
-                        <a asp-action="Details" asp-route-id="@product.ProductID" class="block relative aspect-square overflow-hidden bg-slate-50">
-                            <img src="@(product.ImageUrl ?? "/images/placeholder.jpg")" alt="@product.ProductName" class="w-full h-full object-cover object-center" />
-                            <div class="absolute top-0 right-0 bg-yellow-400 text-orange-600 px-2 py-0.5 text-[10px] font-bold">15% GIẢM</div>
-                        </a>
-                        <div class="p-2">
-                            <a asp-action="Details" asp-route-id="@product.ProductID" class="block text-slate-800 hover:text-orange-500 mb-1 line-clamp-2 text-xs leading-[1.3] min-h-[2rem]" title="@product.ProductName">
-                                @product.ProductName
-                            </a>
-                            <div class="flex items-baseline justify-between mb-1">
-                                <div class="flex items-baseline gap-1">
-                                    <span class="text-orange-500 font-medium text-sm">₫</span>
-                                    <span class="text-orange-500 font-medium text-base">@product.Price.ToString("N0")</span>
-                                </div>
-                                <span class="text-[9px] text-slate-400 line-through">₫@((product.Price * 1.18m).ToString("N0"))</span>
-                            </div>
-                            <div class="flex items-center justify-between text-[10px] mb-1">
-                                <div class="flex items-center gap-0.5 text-yellow-400">
-                                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                                </div>
-                                <span class="text-slate-500">Đã bán 1.2k</span>
-                            </div>
-                            <div class="mb-1.5">
-                                <span class="inline-block bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded text-[9px] font-medium">Voucher 50K</span>
-                            </div>
+                    <div class="group relative flex flex-col">
+                        <!-- Image Container -->
+                        <a asp-action="Details" asp-route-id="@product.ProductID" class="relative block aspect-[4/5] overflow-hidden bg-white rounded-2xl mb-4 shadow-sm hover:shadow-xl transition-all duration-500">
+                            <!-- Label Badge -->
+                            <span class="absolute top-4 left-4 bg-black text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest z-10">Mới</span>
+                            
+                            <img src="@(product.ImageUrl ?? "/images/placeholder.jpg")" 
+                                 alt="@product.ProductName" 
+                                 class="w-full h-full object-contain p-8 transition-transform duration-700 group-hover:scale-110" />
+                            
+                            <!-- Quick Action Overlay (No Icons) -->
                             @if (!User.Identity.IsAuthenticated || User.IsInRole("Customer"))
                             {
-                                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
                                     <form asp-controller="Cart" asp-action="Add" method="post">
                                         <input type="hidden" name="productId" value="@product.ProductID" />
                                         <input type="hidden" name="quantity" value="1" />
-                                        <button type="submit" class="w-full px-2 py-1.5 bg-orange-500 text-white font-medium text-[11px] hover:bg-orange-600 transition-colors rounded">
-                                            <i class="bi bi-cart-plus mr-1"></i>Thêm vào giỏ
+                                        <button type="submit" class="w-full bg-black text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors text-sm uppercase tracking-wide">
+                                            Thêm vào giỏ
                                         </button>
                                     </form>
                                 </div>
                             }
+                        </a>
+
+                        <!-- Content -->
+                        <div class="flex flex-col flex-grow">
+                            <a asp-action="Details" asp-route-id="@product.ProductID" class="text-lg font-semibold text-black hover:text-blue-600 transition-colors mb-1 truncate">
+                                @product.ProductName
+                            </a>
+                            
+                            <div class="flex items-baseline gap-3 mt-1">
+                                <span class="text-base font-medium text-[#1d1d1f]">@product.Price.ToString("N0") VNĐ</span>
+                                <span class="text-sm text-gray-400 line-through">@((product.Price * 1.2m).ToString("N0")) VNĐ</span>
+                            </div>
                         </div>
                     </div>
                 }
             </div>
 
-            <!-- Pagination -->
+            <!-- Pagination: Minimal Text Only -->
             @if (Model.TotalPages > 1)
             {
-                <div class="mt-8 flex justify-center">
-                    <nav class="flex items-center gap-1">
-                        <!-- Previous Page -->
-                        @if (Model.CurrentPage > 1)
-                        {
-                            <a asp-action="Index" 
-                               asp-route-page="@(Model.CurrentPage - 1)"
-                               asp-route-searchString="@Model.CurrentSearchString"
-                               asp-route-categoryId="@Model.CurrentCategoryId"
-                               asp-route-minPrice="@Model.MinPrice"
-                               asp-route-maxPrice="@Model.MaxPrice"
-                               asp-route-sortOrder="@Model.CurrentSortOrder"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        }
+                <div class="mt-20 border-t border-gray-200 pt-8 flex justify-between items-center text-sm font-medium">
+                    <!-- Prev -->
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" class="text-black hover:text-blue-600 transition-colors">
+                            QUAY LẠI
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-gray-300 cursor-not-allowed">QUAY LẠI</span>
+                    }
 
-                        <!-- Page Numbers -->
+                    <!-- Numbers -->
+                    <div class="flex gap-4">
                         @for (int i = 1; i <= Model.TotalPages; i++)
                         {
-                            if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 2 && i <= Model.CurrentPage + 2))
+                             if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 1 && i <= Model.CurrentPage + 1))
                             {
-                                <a asp-action="Index" 
-                                   asp-route-page="@i"
-                                   asp-route-searchString="@Model.CurrentSearchString"
-                                   asp-route-categoryId="@Model.CurrentCategoryId"
-                                   asp-route-minPrice="@Model.MinPrice"
-                                   asp-route-maxPrice="@Model.MaxPrice"
-                                   asp-route-sortOrder="@Model.CurrentSortOrder"
-                                   class="w-8 h-8 flex items-center justify-center rounded-lg border @(i == Model.CurrentPage ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200") transition-colors font-medium text-sm">
-                                    @i
+                                <a asp-action="Index" asp-route-page="@i" 
+                                   class="@(i == Model.CurrentPage ? "text-black border-b-2 border-black" : "text-gray-400 hover:text-black") px-1 pb-1 transition-colors">
+                                    @i.ToString("D2")
                                 </a>
                             }
-                            else if (i == Model.CurrentPage - 3 || i == Model.CurrentPage + 3)
+                            else if (i == Model.CurrentPage - 2 || i == Model.CurrentPage + 2)
                             {
-                                <span class="w-8 h-8 flex items-center justify-center text-slate-400">...</span>
+                                <span class="text-gray-300">...</span>
                             }
                         }
+                    </div>
 
-                        <!-- Next Page -->
-                        @if (Model.CurrentPage < Model.TotalPages)
-                        {
-                            <a asp-action="Index" 
-                               asp-route-page="@(Model.CurrentPage + 1)"
-                               asp-route-searchString="@Model.CurrentSearchString"
-                               asp-route-categoryId="@Model.CurrentCategoryId"
-                               asp-route-minPrice="@Model.MinPrice"
-                               asp-route-maxPrice="@Model.MaxPrice"
-                               asp-route-sortOrder="@Model.CurrentSortOrder"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        }
-                    </nav>
+                    <!-- Next -->
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)" class="text-black hover:text-blue-600 transition-colors">
+                            TIẾP THEO
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-gray-300 cursor-not-allowed">TIẾP THEO</span>
+                    }
                 </div>
             }
         }
@@ -211,82 +183,32 @@
 </div>
 
 <style>
-.line-clamp-2 {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    /* Ẩn thanh scroll mặc định nhưng vẫn scroll được */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 
 <script>
-var carouselInterval;
-var currentIndex = 0;
-var slides = document.querySelectorAll('.banner-slide');
-var totalSlides = slides.length;
-var isPaused = false;
-
-function showSlide(n) {
-    for(var i = 0; i < slides.length; i++) {
-        slides[i].style.opacity = '0';
+    function scrollToProducts() {
+        document.getElementById('productList').scrollIntoView({ 
+            behavior: 'smooth' 
+        });
     }
-    currentIndex = (n + totalSlides) % totalSlides;
-    slides[currentIndex].style.opacity = '1';
-    updateDots();
-}
 
-function updateDots() {
-    var dots = document.querySelectorAll('.dot');
-    for(var i = 0; i < dots.length; i++) {
-        dots[i].className = dots[i].className.replace(' bg-white', ' bg-white/50');
-    }
-    if(dots[currentIndex]) {
-        dots[currentIndex].className = dots[currentIndex].className.replace(' bg-white/50', ' bg-white');
-    }
-}
-
-function moveSlide(direction) {
-    stopCarousel();
-    showSlide(currentIndex + direction);
-    startCarousel();
-}
-
-function jumpToSlide(index) {
-    stopCarousel();
-    showSlide(index);
-    startCarousel();
-}
-
-function startCarousel() {
-    if(!isPaused) {
-        carouselInterval = setInterval(function() {
-            showSlide(currentIndex + 1);
-        }, 2000);
-    }
-}
-
-function stopCarousel() {
-    clearInterval(carouselInterval);
-}
-
-window.addEventListener('load', function() {
-    var dotsContainer = document.getElementById('dotsContainer');
-    for(var i = 0; i < totalSlides; i++) {
-        var dot = document.createElement('button');
-        dot.className = 'dot w-3 h-3 rounded-full bg-white/50 shadow-lg transition-all';
-        dot.onclick = (function(index) {
-            return function() { jumpToSlide(index); };
-        })(i);
-        dotsContainer.appendChild(dot);
-    }
-    
-    showSlide(0);
-    startCarousel();
-    
-    var carousel = document.getElementById('bannerCarousel');
-    carousel.addEventListener('mouseenter', function() {
-        isPaused = true;
-        stopCarousel();
+    // Hiệu ứng Header khi cuộn
+    window.addEventListener('scroll', function() {
+        var nav = document.getElementById('categoryNav');
+        if (window.scrollY > 50) {
+            nav.classList.add('shadow-sm');
+            nav.classList.replace('bg-[#F5F5F7]/90', 'bg-white/95');
+        } else {
+            nav.classList.remove('shadow-sm');
+            nav.classList.replace('bg-white/95', 'bg-[#F5F5F7]/90');
+        }
     });
-    carousel.addEventListener('mouseleave', function() {
-        isPaused = false;
-        startCarousel();
-    });
-});
 </script>
-<script src="~/js/category-toggle.js"></script>
