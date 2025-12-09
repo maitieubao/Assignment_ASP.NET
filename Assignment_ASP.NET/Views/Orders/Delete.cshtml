@@ -20,7 +20,7 @@
             <p class="text-sm mt-2"><span class="font-semibold">Tổng tiền:</span> @Model.TotalAmount.ToString("N0")₫</p>
         </div>
 
-        <form asp-action="DeleteConfirmed" method="post">
+        <form asp-action="Delete" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="OrderID" />
             <div class="flex space-x-4">

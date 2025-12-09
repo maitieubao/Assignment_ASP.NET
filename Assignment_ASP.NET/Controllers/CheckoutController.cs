@@ -5,6 +5,7 @@ using Assignment_ASP.NET.Models;
 using Assignment_ASP.NET.Services;
 using Assignment_ASP.NET.Constants;
 using Assignment_ASP.NET.Extensions;
+using Assignment_ASP.NET.Helpers;
 
 namespace Assignment_ASP.NET.Controllers
 {
@@ -89,16 +90,21 @@ namespace Assignment_ASP.NET.Controllers
 
             try
             {
-                // Tạo đơn hàng thông qua OrderService
+                // Lấy mã giảm giá từ session (nếu có)
+                var coupon = HttpContext.Session.Get<Coupon>(SessionKeys.Coupon);
+
+                // Tạo đơn hàng thông qua OrderService (với coupon)
                 var order = await _orderService.CreateOrderAsync(
                     User.GetUserId(),
                     cart,
                     shippingAddress,
-                    paymentMethod
+                    paymentMethod,
+                    coupon
                 );
 
-                // Xóa giỏ hàng
+                // Xóa giỏ hàng và mã giảm giá
                 _cartService.ClearCart(HttpContext);
+                HttpContext.Session.Remove(SessionKeys.Coupon);
 
                 // Chuyển hướng dựa trên phương thức thanh toán
                 if (paymentMethod == PaymentMethod.VnPay)

@@ -51,7 +51,7 @@ namespace Assignment_ASP.NET.Controllers
 
             if (user.Role.RoleName == Roles.Admin || user.Role.RoleName == Roles.Employee)
             {
-                return RedirectToAction("Index", "Products");
+                return RedirectToAction("Index", "Dashboard");
             }
 
             return RedirectToAction("Index", "Home");
