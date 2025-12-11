@@ -10,6 +10,13 @@ namespace Assignment_ASP.NET.Services
 
     public class ZaloPayService : IZaloPayService
     {
+        private readonly IConfiguration _config;
+
+        public ZaloPayService(IConfiguration config)
+        {
+            _config = config;
+        }
+
         public string CreatePaymentUrl(HttpContext context, Order order)
         {
             // Simulate a successful payment by redirecting to the ZaloPayReturn action with mock parameters
