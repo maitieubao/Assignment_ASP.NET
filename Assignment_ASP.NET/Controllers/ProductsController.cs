@@ -64,6 +64,10 @@ namespace Assignment_ASP.NET.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Log validation errors for debugging
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            TempData["ErrorMessage"] = "Có lỗi xảy ra: " + string.Join(", ", errors);
+            
             await PopulateCategoriesDropDownList(product.CategoryID);
             return View(product);
         }

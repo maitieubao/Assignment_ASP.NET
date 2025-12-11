@@ -124,6 +124,18 @@ namespace Assignment_ASP.NET.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        public async Task<IActionResult> VnPaySimulator(int id)
+        {
+            var order = await _orderService.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+            return View(order);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> VnPayReturn()
         {
             var response = _vnPayService.ProcessCallback(Request.Query);

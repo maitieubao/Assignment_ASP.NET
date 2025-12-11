@@ -1,0 +1,89 @@
+@model Assignment_ASP.NET.Models.Order
+
+@{
+    ViewData["Title"] = "Thanh toán VNPay - Giả lập";
+    var returnUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/Checkout/VnPayReturn?vnp_ResponseCode=00&vnp_TxnRef={Model.OrderID}&vnp_TransactionNo={new Random().Next(100000000, 999999999)}&vnp_SecureHash=mock_hash";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <!-- VNPay Logo -->
+        <div class="text-center mb-6">
+            <div class="inline-block bg-white rounded-2xl shadow-lg p-6 mb-4">
+                <svg class="w-20 h-20 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Cổng thanh toán VNPay</h1>
+            <p class="text-sm text-gray-500 mt-2">Môi trường giả lập (Sandbox)</p>
+        </div>
+
+        <!-- Payment Info Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="border-b border-gray-200 pb-4 mb-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">Thông tin thanh toán</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Mã đơn hàng:</span>
+                        <span class="font-semibold text-gray-900">#@Model.OrderID</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Số tiền:</span>
+                        <span class="font-bold text-blue-600 text-lg">@Model.TotalAmount.ToString("N0") ₫</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Ngân hàng:</span>
+                        <span class="font-semibold text-gray-900">VNPay Sandbox</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-semibold mb-1">Đây là môi trường giả lập</p>
+                        <p>Giao dịch sẽ được xử lý tự động mà không cần thẻ ngân hàng thật.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3">
+                <a href="@returnUrl" 
+                   class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg">
+                    ✓ Thanh toán thành công (Giả lập)
+                </a>
+                
+                <a href="/Checkout/VnPayReturn?vnp_ResponseCode=24&vnp_TxnRef=@Model.OrderID&vnp_TransactionNo=0&vnp_SecureHash=mock_hash" 
+                   class="block w-full bg-gray-100 text-gray-700 text-center py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200">
+                    ✗ Hủy thanh toán
+                </a>
+            </div>
+        </div>
+
+        <p class="text-center text-xs text-gray-500">
+            Powered by VNPay Sandbox • Môi trường thử nghiệm
+        </p>
+    </div>
+
+    <script>
+        // Auto redirect after 10 seconds if no action
+        setTimeout(function() {
+            if (confirm('Tự động thanh toán thành công sau 10 giây. Bạn có muốn tiếp tục?')) {
+                window.location.href = '@Html.Raw(returnUrl)';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

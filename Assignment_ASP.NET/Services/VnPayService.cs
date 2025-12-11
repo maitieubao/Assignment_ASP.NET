@@ -19,10 +19,9 @@ namespace Assignment_ASP.NET.Services
 
         public string CreatePaymentUrl(HttpContext context, Order order)
         {
-            // Simulate a successful payment by redirecting to the VnPayReturn action with mock parameters
-            var returnUrl = $"{context.Request.Scheme}://{context.Request.Host}/Checkout/VnPayReturn";
-            var mockResponseUrl = $"{returnUrl}?vnp_ResponseCode=00&vnp_TxnRef={order.OrderID}&vnp_TransactionNo=123456789&vnp_SecureHash=mock_hash";
-            return mockResponseUrl;
+            // Redirect to simulator page to show payment interface
+            var simulatorUrl = $"{context.Request.Scheme}://{context.Request.Host}/Checkout/VnPaySimulator/{order.OrderID}";
+            return simulatorUrl;
         }
 
         public VnPayResponseModel ProcessCallback(IQueryCollection queryParams)

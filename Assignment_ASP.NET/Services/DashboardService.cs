@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
+using Assignment_ASP.NET.Constants;
 
 namespace Assignment_ASP.NET.Services
 {
@@ -28,22 +29,22 @@ namespace Assignment_ASP.NET.Services
                 TotalOrders = await _context.Orders.CountAsync(),
 
                 // Thống kê đơn hàng theo trạng thái
-                PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending"),
+                PendingOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending),
                 ProcessingOrders = await _context.Orders.CountAsync(o => o.Status == "Processing"),
-                CompletedOrders = await _context.Orders.CountAsync(o => o.Status == "Completed"),
-                CancelledOrders = await _context.Orders.CountAsync(o => o.Status == "Cancelled"),
+                CompletedOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Completed),
+                CancelledOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Canceled),
 
-                // Thống kê doanh thu
+                // Thống kê doanh thu (dựa trên trạng thái thanh toán)
                 TotalRevenue = await _context.Orders
-                    .Where(o => o.Status == "Completed")
+                    .Where(o => o.PaymentStatus == PaymentStatus.Completed)
                     .SumAsync(o => o.TotalAmount),
 
                 MonthlyRevenue = await _context.Orders
-                    .Where(o => o.Status == "Completed" && o.OrderDate >= firstDayOfMonth)
+                    .Where(o => o.PaymentStatus == PaymentStatus.Completed && o.OrderDate >= firstDayOfMonth)
                     .SumAsync(o => o.TotalAmount),
 
                 TodayRevenue = await _context.Orders
-                    .Where(o => o.Status == "Completed" && o.OrderDate.Date == today)
+                    .Where(o => o.PaymentStatus == PaymentStatus.Completed && o.OrderDate.Date == today)
                     .SumAsync(o => o.TotalAmount),
 
                 // Sản phẩm sắp hết hàng
@@ -91,7 +92,7 @@ namespace Assignment_ASP.NET.Services
                 var lastDay = firstDay.AddMonths(1).AddDays(-1);
 
                 var monthRevenue = await _context.Orders
-                    .Where(o => o.Status == "Completed" && 
+                    .Where(o => o.PaymentStatus == PaymentStatus.Completed && 
                                o.OrderDate >= firstDay && 
                                o.OrderDate <= lastDay)
                     .SumAsync(o => o.TotalAmount);

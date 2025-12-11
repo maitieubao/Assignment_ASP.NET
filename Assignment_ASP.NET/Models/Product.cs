@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Assignment_ASP.NET.Models
 {
@@ -51,12 +52,15 @@ namespace Assignment_ASP.NET.Models
         public int CategoryID { get; set; }
 
         // Navigation property
-        public virtual Category Category { get; set; }
+        [ValidateNever]
+        public virtual Category Category { get; set; } = null!;
 
         // Mối quan hệ: Một sản phẩm có trong nhiều chi tiết đơn hàng
-        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        [ValidateNever]
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
         // Mối quan hệ: Một sản phẩm có nhiều đánh giá
-        public virtual ICollection<Review> Reviews { get; set; }
+        [ValidateNever]
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }
