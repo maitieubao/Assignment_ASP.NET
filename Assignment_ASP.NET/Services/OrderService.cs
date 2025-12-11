@@ -10,7 +10,7 @@ namespace Assignment_ASP.NET.Services
     /// </summary>
     public interface IOrderService
     {
-        Task<Order> CreateOrderAsync(int userId, List<CartItem> cartItems, string shippingAddress, string paymentMethod);
+        Task<Order> CreateOrderAsync(int userId, List<CartItem> cartItems, string shippingAddress, string paymentMethod, Coupon? coupon = null);
         Task<bool> UpdatePaymentStatusAsync(int orderId, string paymentStatus);
         Task<bool> UpdateOrderStatusAsync(int orderId, string orderStatus);
         Task<Order?> GetOrderByIdAsync(int orderId, bool includeDetails = false);
@@ -34,11 +34,22 @@ namespace Assignment_ASP.NET.Services
         /// <summary>
         /// Tạo đơn hàng mới từ giỏ hàng
         /// </summary>
-        public async Task<Order> CreateOrderAsync(int userId, List<CartItem> cartItems, string shippingAddress, string paymentMethod)
+        public async Task<Order> CreateOrderAsync(int userId, List<CartItem> cartItems, string shippingAddress, string paymentMethod, Coupon? coupon = null)
         {
             if (cartItems == null || !cartItems.Any())
             {
                 throw new ArgumentException("Giỏ hàng trống");
+            }
+
+            // Tính tổng tiền
+            decimal totalAmount = cartItems.Sum(item => item.Total);
+            decimal discountAmount = 0;
+
+            // Áp dụng mã giảm giá nếu có
+            if (coupon != null && coupon.IsActive && coupon.ExpiryDate >= DateTime.Now)
+            {
+                discountAmount = totalAmount * coupon.DiscountPercentage / 100;
+                totalAmount -= discountAmount;
             }
 
             // Tạo đơn hàng
@@ -46,7 +57,7 @@ namespace Assignment_ASP.NET.Services
             {
                 UserID = userId,
                 OrderDate = DateTime.Now,
-                TotalAmount = cartItems.Sum(item => item.Total),
+                TotalAmount = totalAmount,
                 Status = OrderStatus.Pending,
                 ShippingAddress = shippingAddress,
                 PaymentMethod = paymentMethod,
@@ -93,7 +104,7 @@ namespace Assignment_ASP.NET.Services
                  order.PaymentMethod == PaymentMethod.ZaloPay ||
                  order.PaymentMethod == PaymentMethod.MoMo))
             {
-                order.Status = OrderStatus.Approved;
+                order.Status = OrderStatus.Completed;
             }
 
             await _context.SaveChangesAsync();

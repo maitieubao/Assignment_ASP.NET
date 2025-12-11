@@ -8,6 +8,7 @@ namespace Assignment_ASP.NET.Constants
         public const string Pending = "Pending";
         public const string Approved = "Approved";
         public const string Shipped = "Shipped";
+        public const string Completed = "Completed";
         public const string Canceled = "Canceled";
     }
 
