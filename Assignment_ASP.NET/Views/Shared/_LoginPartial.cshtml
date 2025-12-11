@@ -7,12 +7,12 @@
         </div>
         
         <div class="relative">
-            <button id="userMenuButton" class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button id="userMenuButton" class="w-10 h-10 bg-indigo-600 flex items-center justify-center text-white font-semibold text-sm hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 @User.Identity.Name.Substring(0, 1).ToUpper()
             </button>
             
             <!-- Dropdown - Click to toggle -->
-            <div id="userMenu" class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50">
+            <div id="userMenu" class="hidden absolute right-0 top-full mt-2 w-48 bg-white shadow-lg border border-slate-200 z-50">
                 <div class="py-1.5">
                     <a asp-controller="Account" asp-action="Profile" class="flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         <i class="bi bi-person mr-2.5 text-slate-400"></i>
@@ -65,7 +65,7 @@ else
             Đăng nhập
         </a>
         <a asp-controller="Account" asp-action="Register" 
-           class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+           class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
             Đăng ký
         </a>
     </div>

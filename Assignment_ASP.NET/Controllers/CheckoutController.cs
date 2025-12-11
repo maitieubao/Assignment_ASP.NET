@@ -5,6 +5,7 @@ using Assignment_ASP.NET.Models;
 using Assignment_ASP.NET.Services;
 using Assignment_ASP.NET.Constants;
 using Assignment_ASP.NET.Extensions;
+using Assignment_ASP.NET.Helpers;
 
 namespace Assignment_ASP.NET.Controllers
 {
@@ -89,16 +90,21 @@ namespace Assignment_ASP.NET.Controllers
 
             try
             {
-                // Tạo đơn hàng thông qua OrderService
+                // Lấy mã giảm giá từ session (nếu có)
+                var coupon = HttpContext.Session.Get<Coupon>(SessionKeys.Coupon);
+
+                // Tạo đơn hàng thông qua OrderService (với coupon)
                 var order = await _orderService.CreateOrderAsync(
                     User.GetUserId(),
                     cart,
                     shippingAddress,
-                    paymentMethod
+                    paymentMethod,
+                    coupon
                 );
 
-                // Xóa giỏ hàng
+                // Xóa giỏ hàng và mã giảm giá
                 _cartService.ClearCart(HttpContext);
+                HttpContext.Session.Remove(SessionKeys.Coupon);
 
                 // Chuyển hướng dựa trên phương thức thanh toán
                 if (paymentMethod == PaymentMethod.VnPay)
@@ -181,34 +187,33 @@ namespace Assignment_ASP.NET.Controllers
         }
 
         /// <summary>
-        /// GET: /Checkout/PaymentCallback
+        /// GET: /Checkout/VnPayReturn
         /// Xử lý callback từ VNPAY
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> PaymentCallback()
+        [AllowAnonymous]
+        public async Task<IActionResult> VnPayReturn()
         {
-            var response = _vnPayService.PaymentExecute(Request.Query);
+            var response = _vnPayService.ProcessCallback(Request.Query);
 
-            // Parse orderId safely
             if (!int.TryParse(response.OrderId, out int orderId))
             {
-                 TempData["Error"] = "Lỗi xử lý đơn hàng từ VNPAY";
-                 return RedirectToAction("Index", "Home");
+                TempData["Error"] = "Không tìm thấy thông tin đơn hàng";
+                return RedirectToAction("Index", "Home");
             }
 
-            if (response.Success || response.VnPayResponseCode == "00")
+            if (response.Success)
             {
                 await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Completed);
-                TempData["PaymentSuccess"] = "Thanh toán VNPAY thành công!";
-                return RedirectToAction("OrderConfirmation", new { orderId });
+                TempData["PaymentSuccess"] = "Thanh toán VNPay thành công!";
             }
             else
             {
-                // Thanh toán thất bại
                 await _orderService.UpdatePaymentStatusAsync(orderId, PaymentStatus.Failed);
-                TempData["Error"] = $"Lỗi thanh toán VNPAY: Mã lỗi {response.VnPayResponseCode}";
-                return RedirectToAction("OrderConfirmation", new { orderId });
+                TempData["Error"] = $"Thanh toán thất bại. Mã lỗi: {response.ResponseCode}";
             }
+
+            return RedirectToAction("OrderConfirmation", new { orderId });
         }
 
         /// <summary>

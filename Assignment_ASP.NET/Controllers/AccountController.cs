@@ -51,7 +51,7 @@ namespace Assignment_ASP.NET.Controllers
 
             if (user.Role.RoleName == Roles.Admin || user.Role.RoleName == Roles.Employee)
             {
-                return RedirectToAction("Index", "Products");
+                return RedirectToAction("Index", "Dashboard");
             }
 
             return RedirectToAction("Index", "Home");
@@ -79,21 +79,29 @@ namespace Assignment_ASP.NET.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(
-            [Bind("Username,FullName,Email,Address,Phone")] User user,
-            string password, string confirmPassword)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                return View(user);
+                return View(model);
             }
 
-            var (success, errorMessage) = await _accountService.RegisterAsync(user, password, confirmPassword);
+            // Create User object from ViewModel
+            var user = new User
+            {
+                Username = model.Username,
+                FullName = model.FullName,
+                Email = model.Email,
+                Address = model.Address,
+                Phone = model.Phone
+            };
+
+            var (success, errorMessage) = await _accountService.RegisterAsync(user, model.Password, model.ConfirmPassword);
 
             if (!success)
             {
                 ModelState.AddModelError(string.Empty, errorMessage);
-                return View(user);
+                return View(model);
             }
 
             // Auto login after register

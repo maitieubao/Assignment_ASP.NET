@@ -18,7 +18,7 @@
             <p class="text-sm mt-2"><span class="font-semibold">Số sản phẩm:</span> @Model.Products.Count</p>
         </div>
 
-        <form asp-action="DeleteConfirmed" method="post">
+        <form asp-action="Delete" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="CategoryID" />
             <div class="flex space-x-4">
