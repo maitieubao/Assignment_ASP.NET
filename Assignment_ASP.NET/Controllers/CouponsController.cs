@@ -35,6 +35,12 @@ namespace Assignment_ASP.NET.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (await _context.Coupons.AnyAsync(c => c.Code == coupon.Code))
+                {
+                    ModelState.AddModelError("Code", "Mã giảm giá này đã tồn tại.");
+                    return View(coupon);
+                }
+
                 _context.Add(coupon);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -70,6 +76,12 @@ namespace Assignment_ASP.NET.Controllers
 
             if (ModelState.IsValid)
             {
+                if (await _context.Coupons.AnyAsync(c => c.Code == coupon.Code && c.CouponID != id))
+                {
+                    ModelState.AddModelError("Code", "Mã giảm giá này đã tồn tại.");
+                    return View(coupon);
+                }
+
                 try
                 {
                     _context.Update(coupon);

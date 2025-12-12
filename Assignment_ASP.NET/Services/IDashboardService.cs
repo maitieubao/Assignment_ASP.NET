@@ -4,6 +4,6 @@ namespace Assignment_ASP.NET.Services
 {
     public interface IDashboardService
     {
-        Task<DashboardViewModel> GetDashboardDataAsync();
+        Task<DashboardViewModel> GetDashboardDataAsync(DateTime? startDate = null, DateTime? endDate = null);
     }
 }

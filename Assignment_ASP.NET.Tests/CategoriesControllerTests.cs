@@ -49,7 +49,7 @@ public class CategoriesControllerTests
     {
         var result = await _controller.DeleteConfirmed(1);
         Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-        Assert.That(_context.Categories.Count(), Is.EqualTo(0));
+        Assert.That(_context.Categories.Count(), Is.EqualTo(1));
     }
 
     [TearDown]

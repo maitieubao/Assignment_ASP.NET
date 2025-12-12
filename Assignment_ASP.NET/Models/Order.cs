@@ -37,9 +37,9 @@ namespace Assignment_ASP.NET.Models
         public string PaymentStatus { get; set; } // "Pending", "Completed", "Failed"
 
         // Navigation properties
-        public virtual User User { get; set; }
+        public virtual User? User { get; set; }
 
         // Mối quan hệ: Một đơn hàng có nhiều chi tiết
-        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     }
 }

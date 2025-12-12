@@ -224,30 +224,42 @@ namespace Assignment_ASP.NET.Controllers
         public async Task<IActionResult> OrderConfirmation(int? orderId)
         {
             Order? order;
-
-            if (orderId == null)
+            
+            try 
             {
-                // Lấy đơn hàng mới nhất của user
-                var orders = await _orderService.GetOrdersByUserIdAsync(User.GetUserId());
-                order = orders.FirstOrDefault();
-            }
-            else
-            {
-                order = await _orderService.GetOrderByIdAsync(orderId.Value, includeDetails: true);
-            }
+                var userId = User.GetUserId();
 
-            if (order == null)
-            {
-                return RedirectToAction("Index", "Home");
-            }
+                if (orderId == null)
+                {
+                    // Lấy đơn hàng mới nhất của user
+                    var orders = await _orderService.GetOrdersByUserIdAsync(userId);
+                    order = orders.FirstOrDefault();
+                }
+                else
+                {
+                    order = await _orderService.GetOrderByIdAsync(orderId.Value, includeDetails: true);
+                }
 
-            // Kiểm tra quyền truy cập
-            if (order.UserID != User.GetUserId())
-            {
-                return Forbid();
-            }
+                if (order == null)
+                {
+                    TempData["Error"] = "Không tìm thấy đơn hàng.";
+                    return RedirectToAction("Index", "Home");
+                }
 
-            return View(order);
+                // Kiểm tra quyền truy cập (Cho phép Admin/Employee xem luôn)
+                if (order.UserID != userId && !User.IsInRole(Roles.Admin) && !User.IsInRole(Roles.Employee))
+                {
+                    TempData["Error"] = "Bạn không có quyền xem đơn hàng này.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                return View(order);
+            }
+            catch (Exception ex)
+            {
+                 TempData["Error"] = $"Lỗi khi tải đơn hàng: {ex.Message}";
+                 return RedirectToAction("Index", "Home");
+            }
         }
     }
 }

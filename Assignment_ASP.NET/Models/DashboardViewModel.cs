@@ -18,6 +18,9 @@ namespace Assignment_ASP.NET.Models
         public decimal TotalRevenue { get; set; }
         public decimal MonthlyRevenue { get; set; }
         public decimal TodayRevenue { get; set; }
+
+        public decimal FilteredRevenue { get; set; }
+        public string FilterLabel { get; set; } = "Doanh thu";
         
         // Sản phẩm sắp hết hàng (stock < 10)
         public int LowStockProducts { get; set; }

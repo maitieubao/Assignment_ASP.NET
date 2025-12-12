@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Assignment_ASP.NET.Data;
 using Assignment_ASP.NET.Models;
 using Assignment_ASP.NET.Services;
 using Assignment_ASP.NET.Constants;
@@ -11,10 +13,12 @@ namespace Assignment_ASP.NET.Controllers
     public class ProductsController : Controller
     {
         private readonly IProductService _productService;
+        private readonly ApplicationDbContext _context;
 
-        public ProductsController(IProductService productService)
+        public ProductsController(IProductService productService, ApplicationDbContext context)
         {
             _productService = productService;
+            _context = context;
         }
 
         // GET: /Products
@@ -59,6 +63,14 @@ namespace Assignment_ASP.NET.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Duplicate Name Check
+                if (await _context.Products.AnyAsync(p => p.ProductName == product.ProductName))
+                {
+                    ModelState.AddModelError("ProductName", "Tên sản phẩm đã tồn tại.");
+                    await PopulateCategoriesDropDownList(product.CategoryID);
+                    return View(product);
+                }
+
                 await _productService.CreateProductAsync(product, imageFile);
                 TempData["SuccessMessage"] = "Sản phẩm đã được tạo thành công!";
                 return RedirectToAction(nameof(Index));
@@ -91,6 +103,14 @@ namespace Assignment_ASP.NET.Controllers
 
             if (ModelState.IsValid)
             {
+                // Duplicate Name Check
+                if (await _context.Products.AnyAsync(p => p.ProductName == product.ProductName && p.ProductID != id))
+                {
+                    ModelState.AddModelError("ProductName", "Tên sản phẩm đã tồn tại.");
+                    await PopulateCategoriesDropDownList(product.CategoryID);
+                    return View(product);
+                }
+
                 try
                 {
                     await _productService.UpdateProductAsync(product, imageFile);
@@ -135,7 +155,7 @@ namespace Assignment_ASP.NET.Controllers
         private async Task PopulateCategoriesDropDownList(object? selectedCategory = null)
         {
             var categories = await _productService.GetCategoriesAsync();
-            ViewBag.CategoryID = new SelectList(categories, "CategoryID", "CategoryName", selectedCategory);
+            ViewBag.Categories = new SelectList(categories, "CategoryID", "CategoryName", selectedCategory);
         }
     }
 }

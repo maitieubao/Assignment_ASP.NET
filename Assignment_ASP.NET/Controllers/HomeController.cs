@@ -23,6 +23,11 @@ namespace Assignment_ASP.NET.Controllers
             decimal? maxPrice,
             int page = 1)
         {
+            if (User.IsInRole("Admin") || User.IsInRole("Employee"))
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+
             const int pageSize = 20;
 
             var (products, totalPages, currentPage, totalItems) = await _productService.GetHomeProductsAsync(

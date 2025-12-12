@@ -55,6 +55,12 @@ namespace Assignment_ASP.NET.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (await _context.Categories.AnyAsync(c => c.CategoryName == category.CategoryName))
+                {
+                    ModelState.AddModelError("CategoryName", "Tên danh mục đã tồn tại.");
+                    return View(category);
+                }
+
                 _context.Add(category);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -88,6 +94,12 @@ namespace Assignment_ASP.NET.Controllers
 
             if (ModelState.IsValid)
             {
+                if (await _context.Categories.AnyAsync(c => c.CategoryName == category.CategoryName && c.CategoryID != id))
+                {
+                    ModelState.AddModelError("CategoryName", "Tên danh mục đã tồn tại.");
+                    return View(category);
+                }
+
                 try
                 {
                     _context.Update(category);

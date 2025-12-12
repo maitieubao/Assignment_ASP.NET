@@ -51,12 +51,12 @@ namespace Assignment_ASP.NET.Models
         public int CategoryID { get; set; }
 
         // Navigation property
-        public virtual Category Category { get; set; }
+        public virtual Category? Category { get; set; }
 
         // Mối quan hệ: Một sản phẩm có trong nhiều chi tiết đơn hàng
-        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
         // Mối quan hệ: Một sản phẩm có nhiều đánh giá
-        public virtual ICollection<Review> Reviews { get; set; }
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

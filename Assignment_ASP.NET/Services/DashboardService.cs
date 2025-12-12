@@ -13,11 +13,37 @@ namespace Assignment_ASP.NET.Services
             _context = context;
         }
 
-        public async Task<DashboardViewModel> GetDashboardDataAsync()
+        public async Task<DashboardViewModel> GetDashboardDataAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             var now = DateTime.Now;
             var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
             var today = now.Date;
+
+            // Calculate Filtered Revenue
+            var revenueQuery = _context.Orders.Where(o => o.Status == "Completed");
+            string filterLabel = "Tổng doanh thu";
+
+            if (startDate.HasValue)
+            {
+                revenueQuery = revenueQuery.Where(o => o.OrderDate >= startDate.Value);
+                filterLabel = $"Doanh thu từ {startDate:dd/MM/yyyy}";
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                revenueQuery = revenueQuery.Where(o => o.OrderDate <= end);
+                if (startDate.HasValue)
+                {
+                    filterLabel += $" đến {endDate:dd/MM/yyyy}";
+                }
+                else
+                {
+                    filterLabel = $"Doanh thu đến {endDate:dd/MM/yyyy}";
+                }
+            }
+
+            var filteredRevenue = await revenueQuery.SumAsync(o => o.TotalAmount);
 
             var dashboardData = new DashboardViewModel
             {
@@ -45,6 +71,9 @@ namespace Assignment_ASP.NET.Services
                 TodayRevenue = await _context.Orders
                     .Where(o => o.Status == "Completed" && o.OrderDate.Date == today)
                     .SumAsync(o => o.TotalAmount),
+
+                FilteredRevenue = filteredRevenue,
+                FilterLabel = filterLabel,
 
                 // Sản phẩm sắp hết hàng
                 LowStockProducts = await _context.Products.CountAsync(p => p.StockQuantity < 10),

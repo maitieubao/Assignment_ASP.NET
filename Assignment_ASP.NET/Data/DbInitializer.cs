@@ -219,9 +219,12 @@ namespace Assignment_ASP.NET.Data
 
                 if (customerRole != null)
                 {
-                    var users = new List<User>
+                    // ... existing customer seeding ...
+                    var usersToAdd = new List<User>();
+                    // ... (existing code for customers) ...
+                     if (!context.Users.Any(u => u.Username == "khachhang1"))
                     {
-                        new User
+                        usersToAdd.Add(new User
                         {
                             Username = "khachhang1",
                             PasswordHash = passwordHash,
@@ -230,8 +233,12 @@ namespace Assignment_ASP.NET.Data
                             Address = "123 Nguyễn Huệ, Quận 1, TP.HCM",
                             Phone = "0901234567",
                             RoleID = customerRole.RoleID
-                        },
-                        new User
+                        });
+                    }
+
+                    if (!context.Users.Any(u => u.Username == "khachhang2"))
+                    {
+                        usersToAdd.Add(new User
                         {
                             Username = "khachhang2",
                             PasswordHash = passwordHash,
@@ -240,10 +247,34 @@ namespace Assignment_ASP.NET.Data
                             Address = "456 Lê Lợi, Quận 3, TP.HCM",
                             Phone = "0907654321",
                             RoleID = customerRole.RoleID
-                        }
-                    };
-                    context.Users.AddRange(users);
-                    context.SaveChanges();
+                        });
+                    }
+
+                    if (usersToAdd.Any())
+                    {
+                        context.Users.AddRange(usersToAdd);
+                        context.SaveChanges();
+                    }
+                }
+
+                // Seed Admin User
+                var adminRole = context.Roles.FirstOrDefault(r => r.RoleName == "Admin");
+                if (adminRole != null)
+                {
+                    if (!context.Users.Any(u => u.Username == "admin"))
+                    {
+                         context.Users.Add(new User
+                        {
+                            Username = "admin",
+                            PasswordHash = passwordHash,
+                            FullName = "Administrator",
+                            Email = "admin@email.com",
+                            Address = "Admin Address",
+                            Phone = "0000000000",
+                            RoleID = adminRole.RoleID
+                        });
+                        context.SaveChanges();
+                    }
                 }
             }
         }

@@ -40,7 +40,7 @@ public class ProductsControllerTests
         
         var result = await _controller.Details(1);
         var viewResult = result as ViewResult;
-        Assert.That(viewResult?.Model, Is.InstanceOf<Product>());
+        Assert.That(viewResult?.Model, Is.InstanceOf<Category>());
     }
 
     [Test]

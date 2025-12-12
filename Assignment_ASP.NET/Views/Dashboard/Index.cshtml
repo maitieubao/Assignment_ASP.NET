@@ -15,22 +15,50 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Total Revenue -->
-        <div class="bg-white border border-slate-200 p-6 hover:shadow-lg transition-shadow">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-slate-600 font-medium">Tổng Doanh Thu</p>
-                    <h3 class="text-2xl font-bold text-slate-900 mt-2">@Model.TotalRevenue.ToString("N0") ₫</h3>
-                    <p class="text-xs text-green-600 mt-2">
-                        <i class="bi bi-arrow-up"></i> Tất cả đơn hoàn thành
-                    </p>
-                </div>
-                <div class="w-12 h-12 bg-green-100 flex items-center justify-center">
-                    <i class="bi bi-currency-dollar text-green-600 text-xl"></i>
+    <!-- Filter Form -->
+    <div class="bg-white border border-slate-200 p-4 rounded-lg shadow-sm">
+        <form method="get" class="flex flex-wrap items-end gap-6">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Xem theo</label>
+                <div class="flex bg-slate-100 rounded-lg p-1">
+                    <button type="submit" name="filter" value="today" class="px-4 py-2 text-sm font-medium rounded-md transition-all @(ViewBag.CurrentFilter == "today" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:text-slate-900")">Hôm nay</button>
+                    <button type="submit" name="filter" value="week" class="px-4 py-2 text-sm font-medium rounded-md transition-all @(ViewBag.CurrentFilter == "week" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:text-slate-900")">Tuần này</button>
+                    <button type="submit" name="filter" value="month" class="px-4 py-2 text-sm font-medium rounded-md transition-all @(ViewBag.CurrentFilter == "month" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:text-slate-900")">Tháng này</button>
+                    <button type="submit" name="filter" value="all" class="px-4 py-2 text-sm font-medium rounded-md transition-all @(ViewBag.CurrentFilter == "all" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:text-slate-900")">Tất cả</button>
                 </div>
             </div>
+            
+            <div class="flex items-center gap-4 border-l border-slate-200 pl-6">
+                <div>
+                    <label for="startDate" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Từ ngày</label>
+                    <input type="date" id="startDate" name="startDate" value="@ViewBag.StartDate" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="endDate" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Đến ngày</label>
+                    <input type="date" id="endDate" name="endDate" value="@ViewBag.EndDate" class="block w-full px-3 py-2 border border-slate-300 rounded-md text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="submit" class="mt-6 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    <i class="bi bi-funnel-fill"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Filtered Revenue -->
+        <div class="bg-white border border-slate-200 p-6 hover:shadow-lg transition-shadow relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="bi bi-currency-dollar text-6xl text-green-600"></i>
+            </div>
+            <div class="relative z-10">
+                <p class="text-sm text-slate-600 font-medium">@Model.FilterLabel</p>
+                <h3 class="text-3xl font-bold text-slate-900 mt-2">@Model.FilteredRevenue.ToString("N0") ₫</h3>
+                <p class="text-xs text-green-600 mt-2 font-medium flex items-center">
+                    <i class="bi bi-check-circle-fill mr-1"></i> Đã thanh toán
+                </p>
+            </div>
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
         </div>
 
         <!-- Monthly Revenue -->
@@ -87,6 +115,25 @@
                 <div class="w-12 h-12 bg-purple-100 flex items-center justify-center">
                     <i class="bi bi-box-seam text-purple-600 text-xl"></i>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Revenue Chart -->
+        <div class="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-lg shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Biểu Đồ Doanh Thu</h2>
+            <div class="relative w-full h-80">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Order Status Chart -->
+        <div class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-4">Tỷ Lệ Đơn Hàng</h2>
+            <div class="relative w-full h-64 flex items-center justify-center">
+                 <canvas id="orderStatusChart"></canvas>
             </div>
         </div>
     </div>
@@ -324,3 +371,89 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.MonthlyStatistics.Select(x => $"T{x.Month}/{x.Year}"))),
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: @Html.Raw(Json.Serialize(Model.MonthlyStatistics.Select(x => x.Revenue))),
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [2, 4] },
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('vi-VN', { maximumSignificantDigits: 3 }).format(value);
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Order Status Chart
+        const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ xử lý', 'Đang xử lý', 'Hoàn thành', 'Đã hủy'],
+                datasets: [{
+                    data: [@Model.PendingOrders, @Model.ProcessingOrders, @Model.CompletedOrders, @Model.CancelledOrders],
+                    backgroundColor: ['#eab308', '#3b82f6', '#22c55e', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

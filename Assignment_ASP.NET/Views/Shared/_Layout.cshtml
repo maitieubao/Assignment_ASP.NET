@@ -100,13 +100,16 @@
         <nav class="bg-white border-t border-slate-100">
             <div class="container mx-auto px-4">
                 <ul class="flex items-center space-x-6 py-2.5">
-                    <li>
-                        <a asp-controller="Home" asp-action="Index" 
-                           class="text-sm text-slate-700 hover:text-indigo-600 font-medium flex items-center space-x-1.5">
-                            <i class="bi bi-house-door text-sm"></i>
-                            <span>Trang chủ</span>
-                        </a>
-                    </li>
+                    @if (!User.IsInRole("Admin") && !User.IsInRole("Employee"))
+                    {
+                        <li>
+                            <a asp-controller="Home" asp-action="Index" 
+                               class="text-sm text-slate-700 hover:text-indigo-600 font-medium flex items-center space-x-1.5">
+                                <i class="bi bi-house-door text-sm"></i>
+                                <span>Trang chủ</span>
+                            </a>
+                        </li>
+                    }
 
                     @if (User.Identity.IsAuthenticated)
                     {

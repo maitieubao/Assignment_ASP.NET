@@ -36,9 +36,9 @@ namespace Assignment_ASP.NET.Models
         public int RoleID { get; set; }
 
         // Navigation property (để EF Core hiểu mối quan hệ)
-        public virtual Role Role { get; set; }
+        public virtual Role? Role { get; set; }
 
         // Mối quan hệ: Một người dùng có nhiều đơn hàng
-        public virtual ICollection<Order> Orders { get; set; }
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }
