@@ -63,10 +63,28 @@
                             <i class="bi bi-cash-coin mr-1"></i>COD
                         </span>
                     }
-                    else if (Model.PaymentMethod == "Bank")
+                    else if (Model.PaymentMethod == "VnPay")
                     {
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-full">
-                            <i class="bi bi-bank mr-1"></i>Ngân hàng
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                            <i class="bi bi-credit-card mr-1"></i>VNPay
+                        </span>
+                    }
+                    else if (Model.PaymentMethod == "ZaloPay")
+                    {
+                        <span class="px-3 py-1 bg-cyan-100 text-cyan-700 text-sm font-semibold rounded-full">
+                            <i class="bi bi-wallet2 mr-1"></i>ZaloPay
+                        </span>
+                    }
+                    else if (Model.PaymentMethod == "MoMo")
+                    {
+                        <span class="px-3 py-1 bg-pink-100 text-pink-700 text-sm font-semibold rounded-full">
+                            <i class="bi bi-wallet mr-1"></i>MoMo
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded-full">
+                            @Model.PaymentMethod
                         </span>
                     }
                 </div>

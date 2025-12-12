@@ -32,6 +32,8 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<IZaloPayService, ZaloPayService>();
+builder.Services.AddScoped<IMoMoService, MoMoService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // Add Session
