@@ -85,10 +85,7 @@
                 }
             </div>
         </div>
-    </div>
 
-    <!-- Products Grid -->
-    <div class="lg:col-span-3">
         @if (!Model.Products.Any())
         {
             <div class="bg-white border border-slate-200 p-12 text-center">
@@ -102,7 +99,8 @@
         }
         else
         {
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <!-- GRID LAYOUT: Clean, Spacious -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
                 @foreach (var product in Model.Products)
                 {
                     <div class="bg-white border border-slate-200 overflow-hidden hover:border-orange-500 hover:shadow-lg transition-all duration-200 group">
@@ -132,7 +130,7 @@
                             </div>
                             @if (!User.Identity.IsAuthenticated || User.IsInRole("Customer"))
                             {
-                                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
                                     <form asp-controller="Cart" asp-action="Add" method="post">
                                         <input type="hidden" name="productId" value="@product.ProductID" />
                                         <input type="hidden" name="quantity" value="1" />
@@ -142,12 +140,24 @@
                                     </form>
                                 </div>
                             }
+                        </a>
+
+                        <!-- Content -->
+                        <div class="flex flex-col flex-grow">
+                            <a asp-action="Details" asp-route-id="@product.ProductID" class="text-lg font-semibold text-black hover:text-blue-600 transition-colors mb-1 truncate">
+                                @product.ProductName
+                            </a>
+                            
+                            <div class="flex items-baseline gap-3 mt-1">
+                                <span class="text-base font-medium text-[#1d1d1f]">@product.Price.ToString("N0") VNĐ</span>
+                                <span class="text-sm text-gray-400 line-through">@((product.Price * 1.2m).ToString("N0")) VNĐ</span>
+                            </div>
                         </div>
                     </div>
                 }
             </div>
 
-            <!-- Pagination -->
+            <!-- Pagination: Minimal Text Only -->
             @if (Model.TotalPages > 1)
             {
                 <div class="mt-8 flex justify-center">
@@ -167,10 +177,11 @@
                             </a>
                         }
 
-                        <!-- Page Numbers -->
+                    <!-- Numbers -->
+                    <div class="flex gap-4">
                         @for (int i = 1; i <= Model.TotalPages; i++)
                         {
-                            if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 2 && i <= Model.CurrentPage + 2))
+                             if (i == 1 || i == Model.TotalPages || (i >= Model.CurrentPage - 1 && i <= Model.CurrentPage + 1))
                             {
                                 <a asp-action="Index" 
                                    asp-route-page="@i"
@@ -183,11 +194,12 @@
                                     @i
                                 </a>
                             }
-                            else if (i == Model.CurrentPage - 3 || i == Model.CurrentPage + 3)
+                            else if (i == Model.CurrentPage - 2 || i == Model.CurrentPage + 2)
                             {
-                                <span class="w-8 h-8 flex items-center justify-center text-slate-400">...</span>
+                                <span class="text-gray-300">...</span>
                             }
                         }
+                    </div>
 
                         <!-- Next Page -->
                         @if (Model.CurrentPage < Model.TotalPages)
@@ -211,24 +223,22 @@
 </div>
 
 <style>
-.line-clamp-2 {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    /* Ẩn thanh scroll mặc định nhưng vẫn scroll được */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 
 <script>
-var carouselInterval;
-var currentIndex = 0;
-var slides = document.querySelectorAll('.banner-slide');
-var totalSlides = slides.length;
-var isPaused = false;
-
-function showSlide(n) {
-    for(var i = 0; i < slides.length; i++) {
-        slides[i].style.opacity = '0';
+    function scrollToProducts() {
+        document.getElementById('productList').scrollIntoView({ 
+            behavior: 'smooth' 
+        });
     }
-    currentIndex = (n + totalSlides) % totalSlides;
-    slides[currentIndex].style.opacity = '1';
-    updateDots();
-}
 
 function updateDots() {
     var dots = document.querySelectorAll('.dot');
@@ -283,10 +293,4 @@ window.addEventListener('load', function() {
         isPaused = true;
         stopCarousel();
     });
-    carousel.addEventListener('mouseleave', function() {
-        isPaused = false;
-        startCarousel();
-    });
-});
 </script>
-<script src="~/js/category-toggle.js"></script>
