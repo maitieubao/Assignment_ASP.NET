@@ -41,48 +41,75 @@ namespace Assignment_ASP.NET.Services
                 throw new ArgumentException("Giỏ hàng trống");
             }
 
-            // Tính tổng tiền
-            decimal totalAmount = cartItems.Sum(item => item.Total);
-            decimal discountAmount = 0;
-
-            // Áp dụng mã giảm giá nếu có
-            if (coupon != null && coupon.IsActive && coupon.ExpiryDate >= DateTime.Now)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                discountAmount = totalAmount * coupon.DiscountPercentage / 100;
-                totalAmount -= discountAmount;
-            }
-
-            // Tạo đơn hàng
-            var order = new Order
-            {
-                UserID = userId,
-                OrderDate = DateTime.Now,
-                TotalAmount = totalAmount,
-                Status = OrderStatus.Pending,
-                ShippingAddress = shippingAddress,
-                PaymentMethod = paymentMethod,
-                PaymentStatus = PaymentStatus.Pending
-            };
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            // Tạo chi tiết đơn hàng
-            foreach (var item in cartItems)
-            {
-                var orderDetail = new OrderDetail
+                // 1. Validate Stock & Prepare Data
+                foreach (var item in cartItems)
                 {
-                    OrderID = order.OrderID,
-                    ProductID = item.ProductID,
-                    Quantity = item.Quantity,
-                    Price = item.Price
+                    var product = await _context.Products.FindAsync(item.ProductID);
+                    if (product == null)
+                    {
+                        throw new Exception($"Sản phẩm với ID {item.ProductID} không tồn tại.");
+                    }
+                    
+                    if (product.StockQuantity < item.Quantity)
+                    {
+                        throw new Exception($"Sản phẩm '{product.ProductName}' không đủ số lượng trong kho (Còn lại: {product.StockQuantity}).");
+                    }
+
+                    // Deduct stock temporarily (will be committed later)
+                    product.StockQuantity -= item.Quantity;
+                }
+
+                // 2. Calculate Total
+                decimal totalAmount = cartItems.Sum(item => item.Total);
+                decimal discountAmount = 0;
+
+                if (coupon != null && coupon.IsActive && coupon.ExpiryDate >= DateTime.Now)
+                {
+                    discountAmount = totalAmount * coupon.DiscountPercentage / 100;
+                    totalAmount -= discountAmount;
+                }
+
+                // 3. Create Order
+                var order = new Order
+                {
+                    UserID = userId,
+                    OrderDate = DateTime.Now,
+                    TotalAmount = totalAmount,
+                    Status = OrderStatus.Pending,
+                    ShippingAddress = shippingAddress,
+                    PaymentMethod = paymentMethod,
+                    PaymentStatus = PaymentStatus.Pending
                 };
-                _context.OrderDetails.Add(orderDetail);
+
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync(); // To get OrderID
+
+                // 4. Create OrderDetails
+                foreach (var item in cartItems)
+                {
+                    var orderDetail = new OrderDetail
+                    {
+                        OrderID = order.OrderID,
+                        ProductID = item.ProductID,
+                        Quantity = item.Quantity,
+                        Price = item.Price
+                    };
+                    _context.OrderDetails.Add(orderDetail);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return order;
             }
-
-            await _context.SaveChangesAsync();
-
-            return order;
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>
