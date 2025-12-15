@@ -28,7 +28,7 @@ public class CategoriesControllerTests
     }
 
     [Test]
-    public async Task Index_ReturnsCategories()
+    public async Task Index_WhenCalled_ReturnsViewWithCategories()
     {
         var result = await _controller.Index();
         var viewResult = result as ViewResult;
@@ -36,7 +36,7 @@ public class CategoriesControllerTests
     }
 
     [Test]
-    public async Task Create_AddsCategory()
+    public async Task Create_ValidCategory_RedirectsToIndexAndAddsCategory()
     {
         var category = new Category { CategoryName = "Laptop" };
         var result = await _controller.Create(category);
@@ -45,11 +45,11 @@ public class CategoriesControllerTests
     }
 
     [Test]
-    public async Task Delete_RemovesCategory()
+    public async Task DeleteConfirmed_ExistingId_RedirectsToIndexAndRemovesCategory()
     {
         var result = await _controller.DeleteConfirmed(1);
         Assert.That(result, Is.InstanceOf<RedirectToActionResult>());
-        Assert.That(_context.Categories.Count(), Is.EqualTo(1));
+        Assert.That(_context.Categories.Count(), Is.EqualTo(0));
     }
 
     [TearDown]

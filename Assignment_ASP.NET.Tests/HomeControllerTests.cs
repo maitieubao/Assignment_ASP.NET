@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Assignment_ASP.NET.Controllers;
 using Assignment_ASP.NET.Models;
 using Assignment_ASP.NET.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -18,10 +19,16 @@ public class HomeControllerTests
     {
         _mockService = new Mock<IProductService>();
         _controller = new HomeController(_mockService.Object);
+        
+        var context = new DefaultHttpContext();
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = context
+        };
     }
 
     [Test]
-    public async Task Index_ReturnsView()
+    public async Task Index_WhenCalled_ReturnsViewResult()
     {
         _mockService.Setup(s => s.GetHomeProductsAsync(null!, null, null!, null, null, 1, 20))
             .ReturnsAsync((new List<Product> { new Product { ProductID = 1, ProductName = "iPhone" } }, 1, 1, 1));
@@ -33,7 +40,7 @@ public class HomeControllerTests
     }
 
     [Test]
-    public async Task Details_ReturnsProduct()
+    public async Task Details_ExistingId_ReturnsViewWithProduct()
     {
         _mockService.Setup(s => s.GetProductWithReviewsAsync(1))
             .ReturnsAsync(new Product { ProductID = 1, ProductName = "iPhone" });
@@ -44,7 +51,7 @@ public class HomeControllerTests
     }
 
     [Test]
-    public async Task Details_ReturnsNotFound()
+    public async Task Details_UnknownId_ReturnsNotFoundResult()
     {
         _mockService.Setup(s => s.GetProductWithReviewsAsync(999))
             .ReturnsAsync((Product?)null);
